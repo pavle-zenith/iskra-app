@@ -247,12 +247,16 @@ export interface QuizResults {
   smokingProfile: SmokingProfile;
   annualCostRSD: number;
   fiveYearCostRSD: number;
+  cigarettesPerDay: number;
   cigarettesPerYear: number;
   readinessScore: number; // 0-9
   answers: Record<string, string>;
 }
 
-export function calculateResults(answers: Record<string, string>, cigarettesPerDay = 15, packPrice = 450, cigsPerPack = 20): QuizResults {
+export function calculateResults(answers: Record<string, string>, packPrice = 450, cigsPerPack = 20): QuizResults {
+  const q1CigsMap: Record<string, number> = { a: 3, b: 8, c: 15, d: 25 };
+  const cigarettesPerDay = q1CigsMap[answers['q1']] ?? 15;
+
   // Fagerstrom
   const fagerstromKeys = ['f1', 'f2', 'f3', 'f4'];
   let fagerstromScore = 0;
@@ -299,6 +303,7 @@ export function calculateResults(answers: Record<string, string>, cigarettesPerD
     smokingProfile,
     annualCostRSD,
     fiveYearCostRSD,
+    cigarettesPerDay,
     cigarettesPerYear,
     readinessScore,
     answers,
