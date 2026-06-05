@@ -114,7 +114,7 @@ html, body {
   background: var(--card);
   border: 1.5px solid var(--border);
   border-radius: var(--r-card);
-  padding: 18px 20px;
+  padding: 14px 16px;
   cursor: pointer;
   transition: border-color 0.13s ease, background 0.13s ease, box-shadow 0.13s ease, transform 0.12s ease;
   display: flex;
@@ -192,7 +192,7 @@ html, body {
   color: white;
   border: none;
   border-radius: var(--r-btn);
-  padding: 18px 32px;
+  padding: 16px 32px;
   font-family: var(--font);
   font-size: 16px;
   font-weight: 700;

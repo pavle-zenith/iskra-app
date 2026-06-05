@@ -77,35 +77,37 @@ function IntroScreen({ onStart }: { onStart: () => void }) {
   ];
 
   return (
-    <div className="animate-fade-in" style={{ maxWidth: 480, margin: '0 auto', padding: '0 20px' }}>
-      <div style={{ paddingTop: 48, paddingBottom: 40, textAlign: 'center' }}>
+    <div className="animate-fade-in" style={{
+      maxWidth: 480, margin: '0 auto', padding: '0 20px',
+      minHeight: '100dvh', display: 'flex', flexDirection: 'column',
+    }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingTop: 24, paddingBottom: 8, textAlign: 'center' }}>
 
         <div className="animate-scale-in" style={{
-          display: 'inline-flex', alignItems: 'center', gap: 10,
-          background: 'var(--card)', borderRadius: 16, padding: '10px 20px',
-          border: '1px solid var(--border)', marginBottom: 40,
-          boxShadow: 'var(--shadow-card)',
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          background: 'var(--card)', borderRadius: 14, padding: '8px 16px',
+          border: '1px solid var(--border)', marginBottom: 20,
+          boxShadow: 'var(--shadow-card)', alignSelf: 'center',
         }}>
-          <img src="/iskra-flame-ember.png" alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} />
-          <span style={{ fontWeight: 800, fontSize: 18, letterSpacing: '-0.02em', color: 'var(--text)' }}>iskra</span>
+          <img src="/iskra-flame-ember.png" alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
+          <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: '-0.02em', color: 'var(--text)' }}>iskra</span>
         </div>
 
         <div className="animate-slide-up delay-100">
           <h1 style={{
-            fontSize: 32, fontWeight: 800, lineHeight: 1.2,
-            letterSpacing: '-0.03em', marginBottom: 16,
+            fontSize: 28, fontWeight: 800, lineHeight: 1.2,
+            letterSpacing: '-0.03em', marginBottom: 10,
           }}>
             Šta te stvarno<br />drži uz cigaretu?
           </h1>
-          <p style={{ color: 'var(--text-sub)', fontSize: 16, lineHeight: 1.6, marginBottom: 32 }}>
-            15 pitanja. Dobićeš tačan profil zavisnosti,<br />
-            koliko trojiš i strategiju koja funkcioniše za tebe.
+          <p style={{ color: 'var(--text-sub)', fontSize: 14, lineHeight: 1.55, marginBottom: 20 }}>
+            15 pitanja. Tačan profil zavisnosti, koliko trojiš i strategija koja funkcioniše za tebe.
           </p>
         </div>
 
         <div className="animate-slide-up delay-200" style={{
           display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
-          gap: 12, marginBottom: 40,
+          gap: 8, marginBottom: 16,
         }}>
           {[
             { num: '15',   label: 'pitanja' },
@@ -113,38 +115,38 @@ function IntroScreen({ onStart }: { onStart: () => void }) {
             { num: '100%', label: 'besplatno' },
           ].map(item => (
             <div key={item.label} style={{
-              background: 'var(--card)', borderRadius: 16, padding: '16px 12px',
+              background: 'var(--card)', borderRadius: 14, padding: '12px 8px',
               border: '1px solid var(--border)', textAlign: 'center',
               boxShadow: 'var(--shadow-card)',
             }}>
-              <div style={{ fontWeight: 800, fontSize: 20, color: 'var(--ember)', letterSpacing: '-0.02em' }}>{item.num}</div>
-              <div style={{ fontSize: 12, color: 'var(--text-sub)', fontWeight: 600, marginTop: 2 }}>{item.label}</div>
+              <div style={{ fontWeight: 800, fontSize: 17, color: 'var(--ember)', letterSpacing: '-0.02em' }}>{item.num}</div>
+              <div style={{ fontSize: 11, color: 'var(--text-sub)', fontWeight: 600, marginTop: 2 }}>{item.label}</div>
             </div>
           ))}
         </div>
 
         <div className="animate-slide-up delay-300" style={{
-          background: 'var(--card)', borderRadius: 20, padding: 24,
-          border: '1px solid var(--border)', marginBottom: 32, textAlign: 'left',
+          background: 'var(--card)', borderRadius: 18, padding: '16px 18px',
+          border: '1px solid var(--border)', marginBottom: 20, textAlign: 'left',
           boxShadow: 'var(--shadow-card)',
         }}>
-          <p className="isk-eyebrow" style={{ marginBottom: 16 }}>Šta dobijaš</p>
+          <p className="isk-eyebrow" style={{ marginBottom: 12 }}>Šta dobijaš</p>
           {benefits.map(({ Icon, bg, stroke, text }) => (
-            <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-              <IconChip icon={<Icon size={15} stroke={stroke} />} bg={bg} size={30} radius={8} />
-              <span style={{ fontSize: 15, lineHeight: 1.4 }}>{text}</span>
+            <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              <IconChip icon={<Icon size={13} stroke={stroke} />} bg={bg} size={28} radius={7} />
+              <span style={{ fontSize: 14, lineHeight: 1.35 }}>{text}</span>
             </div>
           ))}
         </div>
+      </div>
 
-        <div className="animate-slide-up delay-400">
-          <button className="btn-primary" onClick={onStart}>
-            Počni quiz →
-          </button>
-          <p style={{ fontSize: 12, color: 'var(--text-sub)', marginTop: 12, textAlign: 'center' }}>
-            Nema registracije. Rezultati za 3 minuta.
-          </p>
-        </div>
+      <div className="animate-slide-up delay-400" style={{ paddingBottom: 28 }}>
+        <button className="btn-primary" onClick={onStart}>
+          Počni quiz →
+        </button>
+        <p style={{ fontSize: 12, color: 'var(--text-sub)', marginTop: 10, textAlign: 'center' }}>
+          Nema registracije. Rezultati za 3 minuta.
+        </p>
       </div>
     </div>
   );
@@ -198,11 +200,11 @@ function OnboardingScreen({ onComplete }: {
   return (
     <div style={{
       maxWidth: 480, margin: '0 auto', padding: '0 20px',
-      minHeight: '100vh', display: 'flex', flexDirection: 'column',
+      height: '100dvh', display: 'flex', flexDirection: 'column',
     }}>
       {/* Nav */}
-      <div style={{ paddingTop: 20, paddingBottom: 24 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', marginBottom: 16 }}>
+      <div style={{ paddingTop: 14, paddingBottom: 16, flexShrink: 0 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', marginBottom: 12 }}>
           <button className="btn-back" onClick={() => step > 1 ? setStep(1) : undefined}
             style={{ visibility: step > 1 ? 'visible' : 'hidden', justifySelf: 'start' }}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -356,17 +358,17 @@ function QuestionScreen({
   const CatIcon = CATEGORY_ICONS[question.category];
 
   return (
-    <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 20px', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 20px', height: '100dvh', display: 'flex', flexDirection: 'column' }}>
 
-      <div style={{ paddingTop: 20, paddingBottom: 24 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', marginBottom: 16 }}>
+      <div style={{ paddingTop: 14, paddingBottom: 16, flexShrink: 0 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', marginBottom: 12 }}>
           <button className="btn-back" onClick={onBack} style={{ justifySelf: 'start' }}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             Nazad
           </button>
-          <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: '-0.01em', color: 'var(--text)' }}>iskra</span>
+          <span style={{ fontWeight: 800, fontSize: 15, letterSpacing: '-0.01em', color: 'var(--text)' }}>iskra</span>
           <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-sub)', justifySelf: 'end' }}>
             {questionIndex + 1} / {total}
           </span>
@@ -376,8 +378,8 @@ function QuestionScreen({
         </div>
       </div>
 
-      <div key={questionIndex} className="animate-slide-in" style={{ flex: 1 }}>
-        <div style={{ marginBottom: 8 }}>
+      <div key={questionIndex} className="animate-slide-in" style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ marginBottom: 6 }}>
           <span className="category-pill">
             <CatIcon size={11} stroke="var(--ember)" sw={2} />
             {CATEGORY_LABELS[question.category]}
@@ -385,19 +387,19 @@ function QuestionScreen({
         </div>
 
         <h2 style={{
-          fontSize: 26, fontWeight: 800, lineHeight: 1.25,
-          letterSpacing: '-0.025em', marginTop: 16, marginBottom: question.subtitle ? 8 : 28,
+          fontSize: 22, fontWeight: 800, lineHeight: 1.22,
+          letterSpacing: '-0.025em', marginTop: 12, marginBottom: question.subtitle ? 6 : 18,
         }}>
           {question.question}
         </h2>
 
         {question.subtitle && (
-          <p style={{ color: 'var(--text-sub)', fontSize: 14, lineHeight: 1.6, marginBottom: 28 }}>
+          <p style={{ color: 'var(--text-sub)', fontSize: 13, lineHeight: 1.5, marginBottom: 16 }}>
             {question.subtitle}
           </p>
         )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {question.options?.map((opt, i) => (
             <button
               key={opt.id}
@@ -405,7 +407,7 @@ function QuestionScreen({
               onClick={() => onAnswer(question.id, opt.id)}
             >
               <div className="option-letter">{letters[i]}</div>
-              <span style={{ fontSize: 15, fontWeight: 500, lineHeight: 1.4 }}>{opt.label}</span>
+              <span style={{ fontSize: 14, fontWeight: 500, lineHeight: 1.35 }}>{opt.label}</span>
               {selected === opt.id && (
                 <svg style={{ marginLeft: 'auto', flexShrink: 0 }} width="20" height="20" viewBox="0 0 20 20" fill="none">
                   <circle cx="10" cy="10" r="10" fill="rgba(255,255,255,0.25)" />
@@ -417,7 +419,7 @@ function QuestionScreen({
         </div>
       </div>
 
-      <div style={{ paddingBottom: 32, paddingTop: 24 }}>
+      <div style={{ paddingBottom: 24, paddingTop: 12, flexShrink: 0 }}>
         <button
           className="btn-primary"
           disabled={!selected}
@@ -476,7 +478,7 @@ function FeedbackScreen({ feedbackIndex, answers, onContinue }: {
   return (
     // Layer 1 — base ember gradient
     <div className="animate-fade-in" style={{
-      minHeight: '100vh', position: 'relative', overflow: 'hidden',
+      height: '100dvh', position: 'relative', overflow: 'hidden',
       background: 'linear-gradient(158deg, #F0701F 0%, #E8621A 58%, #D2581A 100%)',
       display: 'flex', flexDirection: 'column',
       padding: '0 20px',
@@ -501,20 +503,20 @@ function FeedbackScreen({ feedbackIndex, answers, onContinue }: {
       {/* Layer 4 — content */}
       <div style={{ position: 'relative', maxWidth: 480, margin: '0 auto', width: '100%', flex: 1, display: 'flex', flexDirection: 'column' }}>
         {/* Content — flex-grows to push button to bottom */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingTop: 60, paddingBottom: 20, textAlign: 'center' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingTop: 32, paddingBottom: 12, textAlign: 'center' }}>
           {feedbackIndex === 1 ? (
             <>
               <div className="animate-slide-up" style={eyebrow}>TVOJ OBRAZAC</div>
               <div className="animate-slide-up delay-100" style={glass}>
-                <div style={{ fontSize: 52, fontWeight: 800, color: 'white', letterSpacing: '-0.03em', lineHeight: 1, textShadow: '0 1px 8px rgba(120,50,10,0.35)' }}>
+                <div style={{ fontSize: 44, fontWeight: 800, color: 'white', letterSpacing: '-0.03em', lineHeight: 1, textShadow: '0 1px 8px rgba(120,50,10,0.35)' }}>
                   {cigarettesPerYear.toLocaleString('sr-RS')}
                 </div>
-                <div style={{ fontSize: 16, color: 'rgba(255,255,255,0.85)', marginTop: 8, fontWeight: 600 }}>
+                <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)', marginTop: 6, fontWeight: 600 }}>
                   cigareta godišnje
                 </div>
               </div>
               <p className="animate-slide-up delay-200" style={{
-                color: 'rgba(255,255,255,0.92)', fontSize: 18, lineHeight: 1.65,
+                color: 'rgba(255,255,255,0.92)', fontSize: 16, lineHeight: 1.6,
                 fontWeight: 500, textShadow: '0 1px 6px rgba(120,50,10,0.25)',
               }}>
                 Jutarnji pušači imaju duplo veću hemijsku zavisnost od večernjih.
@@ -524,15 +526,15 @@ function FeedbackScreen({ feedbackIndex, answers, onContinue }: {
             <>
               <div className="animate-slide-up" style={eyebrow}>ZAVISNOST OD NIKOTINA</div>
               <div className="animate-slide-up delay-100" style={glass}>
-                <div style={{ fontSize: 30, fontWeight: 800, color: 'white', letterSpacing: '-0.02em', textShadow: '0 1px 8px rgba(120,50,10,0.35)' }}>
+                <div style={{ fontSize: 26, fontWeight: 800, color: 'white', letterSpacing: '-0.02em', textShadow: '0 1px 8px rgba(120,50,10,0.35)' }}>
                   {partialLevel} zavisnost
                 </div>
-                <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.8)', marginTop: 8, fontWeight: 500 }}>
+                <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)', marginTop: 6, fontWeight: 500 }}>
                   Fagerstrom skor: {partialScore} / 6
                 </div>
               </div>
               <p className="animate-slide-up delay-200" style={{
-                color: 'rgba(255,255,255,0.92)', fontSize: 18, lineHeight: 1.65,
+                color: 'rgba(255,255,255,0.92)', fontSize: 16, lineHeight: 1.6,
                 fontWeight: 500, textShadow: '0 1px 6px rgba(120,50,10,0.25)',
               }}>
                 Sledeći blok otkriva psihološku stranu — zašto te cigareta drži, ne samo hemija.
@@ -542,7 +544,7 @@ function FeedbackScreen({ feedbackIndex, answers, onContinue }: {
         </div>
 
         {/* Button — same position as quiz CTA */}
-        <div style={{ paddingBottom: 32, paddingTop: 16 }}>
+        <div style={{ paddingBottom: 24, paddingTop: 12, flexShrink: 0 }}>
           <button className="animate-slide-up delay-300" onClick={onContinue} style={whiteBtn}>
             Nastavi →
           </button>
