@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { questions, calculateResults, profileDescriptions, type QuizResults } from '@/lib/quiz-data';
 
-type Stage = 'intro' | 'onboarding' | 'quiz' | 'feedback' | 'loading' | 'partial' | 'email' | 'results';
+type Stage = 'intro' | 'onboarding' | 'quiz' | 'feedback' | 'loading' | 'partial' | 'email' | 'promo' | 'results';
 type Gender = 'muško' | 'žensko' | 'drugo';
 
 // ── Inline SVG icon primitives (24×24, stroke-based, no emoji) ────────────────
@@ -30,6 +30,7 @@ const IcoMail     = (p: { size?: number; stroke?: string; sw?: number }) => <Ico
 const IcoLock     = (p: { size?: number; stroke?: string; sw?: number }) => <Ico {...p}><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></Ico>;
 const IcoCalendar = (p: { size?: number; stroke?: string; sw?: number }) => <Ico {...p}><rect width="18" height="18" x="3" y="4" rx="2" ry="2" /><line x1="16" x2="16" y1="2" y2="6" /><line x1="8" x2="8" y1="2" y2="6" /><line x1="3" x2="21" y1="10" y2="10" /></Ico>;
 const IcoCheck    = (p: { size?: number; stroke?: string; sw?: number }) => <Ico {...p}><path d="M20 6 9 17l-5-5" /></Ico>;
+const IcoInfo     = (p: { size?: number; stroke?: string; sw?: number }) => <Ico {...p}><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></Ico>;
 const IcoShare    = (p: { size?: number; stroke?: string; sw?: number }) => <Ico {...p}><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" /><polyline points="16 6 12 2 8 6" /><line x1="12" x2="12" y1="2" y2="15" /></Ico>;
 const IcoUser     = (p: { size?: number; stroke?: string; sw?: number }) => <Ico {...p}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></Ico>;
 const IcoMinus    = (p: { size?: number; stroke?: string; sw?: number }) => <Ico {...p}><line x1="5" y1="12" x2="19" y2="12" /></Ico>;
@@ -67,86 +68,177 @@ function IconChip({ icon, bg, size = 44, radius = 12 }: {
   );
 }
 
+// ─── DRIVER BREAKDOWN CHART ───────────────────────────────────────────────────
+function DriverBreakdownChart({ breakdown, animate = true }: {
+  breakdown: { stress: number; habit: number; social: number; nicotine: number };
+  animate?: boolean;
+}) {
+  const [rendered, setRendered] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setRendered(true), 80); return () => clearTimeout(t); }, []);
+
+  const drivers = [
+    { key: 'stress',   label: 'Stres i pritisak',      color: '#E8621A', pct: breakdown.stress },
+    { key: 'habit',    label: 'Navika i rutina',        color: '#4A8AC4', pct: breakdown.habit },
+    { key: 'social',   label: 'Društvene situacije',    color: '#2D8A4E', pct: breakdown.social },
+    { key: 'nicotine', label: 'Nikotinska zavisnost',   color: '#BA7517', pct: breakdown.nicotine },
+  ].sort((a, b) => b.pct - a.pct);
+
+  const dominant = drivers[0];
+
+  const interpretations: Record<string, string> = {
+    stress:   'Tvoj najveći okidač nije nikotin. Stres i svakodnevni pritisak imaju daleko veći uticaj na pušenje nego sama hemijska zavisnost.',
+    habit:    'Tvoje pušenje je uglavnom automatsko. Mozak je vezao cigaretu za svakodnevne rituale — i sad ih je teško razdvojiti.',
+    social:   'Kod tebe cigareta živi u društvenom kontekstu. Kafane, piće, pauze — to su tvoji pravi okidači, ne nikotin sam po sebi.',
+    nicotine: 'Kod tebe hemijska zavisnost igra centralnu ulogu. Telo traži nikotin — i to je medicinski problem, ne stvar volje.',
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 18 }}>
+        {drivers.map(d => (
+          <div key={d.key}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{d.label}</span>
+              <span style={{ fontSize: 14, fontWeight: 800, color: d.color, letterSpacing: '-0.01em' }}>{d.pct}%</span>
+            </div>
+            <div style={{ height: 8, background: 'var(--faint)', borderRadius: 'var(--r-pill)', overflow: 'hidden' }}>
+              <div style={{
+                height: '100%', borderRadius: 'var(--r-pill)',
+                background: d.color,
+                width: animate ? (rendered ? `${d.pct}%` : '0%') : `${d.pct}%`,
+                transition: animate ? 'width 0.9s cubic-bezier(0.22, 1, 0.36, 1)' : 'none',
+                transitionDelay: animate ? `${drivers.indexOf(d) * 0.12}s` : '0s',
+              }} />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{
+        background: 'var(--ember-tint)', borderRadius: 12, padding: '12px 14px',
+        borderLeft: '3px solid var(--ember)',
+      }}>
+        <p style={{ fontSize: 13, lineHeight: 1.6, color: 'var(--body-text)', fontWeight: 500 }}>
+          {interpretations[dominant.key]}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ─── INTRO ────────────────────────────────────────────────────────────────────
 function IntroScreen({ onStart }: { onStart: () => void }) {
   const benefits = [
-    { Icon: IcoTarget,   bg: '#FEF0E8', stroke: '#E8621A', text: 'Tip pušača i psihološki profil' },
-    { Icon: IcoActivity, bg: '#EEF4FF', stroke: '#4A8AC4', text: 'Fagerstrom skor zavisnosti (klinički)' },
-    { Icon: IcoCoin,     bg: '#E1F1E1', stroke: '#3A7A3A', text: 'Koliko trojiš godišnje — do dinara' },
-    { Icon: IcoWrench,   bg: '#FEF0E8', stroke: '#E8621A', text: 'Personalizovana strategija za prestanak' },
+    { Icon: IcoTarget,   bg: '#FEF0E8', stroke: '#E8621A', text: 'Profil pušača i glavni okidači' },
+    { Icon: IcoActivity, bg: '#EEF4FF', stroke: '#4A8AC4', text: 'Fagerstrom skor zavisnosti' },
+    { Icon: IcoCoin,     bg: '#E1F1E1', stroke: '#3A7A3A', text: 'Procena godišnjeg troška' },
+    { Icon: IcoWrench,   bg: '#FEF0E8', stroke: '#E8621A', text: 'Personalizovana strategija prestanka' },
+  ];
+
+  const listItems = [
+    'koliko si zapravo zavisan od nikotina',
+    'šta te najčešće vraća cigareti',
+    'koliko te pušenje košta godišnje',
+    'koji pristup ima najviše smisla za tvoj slučaj',
   ];
 
   return (
+    // Layer 1 — warm white base
     <div className="animate-fade-in" style={{
-      maxWidth: 480, margin: '0 auto', padding: '0 20px',
+      position: 'relative', overflow: 'hidden',
       minHeight: '100dvh', display: 'flex', flexDirection: 'column',
+      background: '#ffffff',
     }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingTop: 24, paddingBottom: 8, textAlign: 'center' }}>
+      {/* Layer 2 — canyon texture: luminosity blend preserves white base, adds only light/shadow structure */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        backgroundImage: "url('/canyon-bg.png')",
+        backgroundSize: 'cover', backgroundPosition: 'center 40%',
+        opacity: 0.06, mixBlendMode: 'luminosity',
+        filter: 'saturate(0)', pointerEvents: 'none',
+      }} />
 
-        <div className="animate-scale-in" style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8,
-          background: 'var(--card)', borderRadius: 14, padding: '8px 16px',
-          border: '1px solid var(--border)', marginBottom: 20,
-          boxShadow: 'var(--shadow-card)', alignSelf: 'center',
-        }}>
-          <img src="/iskra-flame-ember.png" alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
-          <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: '-0.02em', color: 'var(--text)' }}>iskra</span>
+      {/* Layer 3 — content */}
+      <div style={{
+        position: 'relative', maxWidth: 480, margin: '0 auto',
+        padding: '0 20px', flex: 1, display: 'flex', flexDirection: 'column',
+      }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingTop: 24, paddingBottom: 8, textAlign: 'center' }}>
+
+          <div className="animate-scale-in" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            background: 'var(--card)', borderRadius: 14, padding: '8px 16px',
+            border: '1px solid var(--border)', marginBottom: 20,
+            boxShadow: 'var(--shadow-card)', alignSelf: 'center',
+          }}>
+            <img src="/iskra-flame-ember.png" alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
+            <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: '-0.02em', color: 'var(--text)' }}>iskra</span>
+          </div>
+
+          <div className="animate-slide-up delay-100">
+            <h1 style={{
+              fontSize: 28, fontWeight: 800, lineHeight: 1.2,
+              letterSpacing: '-0.03em', marginBottom: 10,
+            }}>
+              Šta je razlog zbog kog i dalje pališ — čak i kad znaš da ne bi trebalo?
+            </h1>
+            <p style={{ color: 'var(--text-sub)', fontSize: 14, lineHeight: 1.55, marginBottom: 10 }}>
+              Za 3 minuta saznaćeš:
+            </p>
+            <div style={{ textAlign: 'left', marginBottom: 20 }}>
+              {listItems.map(item => (
+                <div key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
+                  <span style={{ color: 'var(--ember)', flexShrink: 0, marginTop: 2 }}>
+                    <IcoCheck size={10} stroke="var(--ember)" sw={3} />
+                  </span>
+                  <span style={{ fontSize: 14, color: 'var(--text-sub)', lineHeight: 1.5 }}>{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="animate-slide-up delay-200" style={{
+            display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
+            gap: 8, marginBottom: 16,
+          }}>
+            {[
+              { num: '15',   label: 'pitanja' },
+              { num: '3min', label: 'trajanje' },
+              { num: '100%', label: 'besplatno' },
+            ].map(item => (
+              <div key={item.label} style={{
+                background: 'var(--card)', borderRadius: 14, padding: '12px 8px',
+                border: '1px solid var(--border)', textAlign: 'center',
+                boxShadow: 'var(--shadow-card)',
+              }}>
+                <div style={{ fontWeight: 800, fontSize: 17, color: 'var(--ember)', letterSpacing: '-0.02em' }}>{item.num}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-sub)', fontWeight: 600, marginTop: 2 }}>{item.label}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="animate-slide-up delay-300" style={{
+            background: 'var(--card)', borderRadius: 18, padding: '16px 18px',
+            border: '1px solid var(--border)', marginBottom: 20, textAlign: 'left',
+            boxShadow: 'var(--shadow-card)',
+          }}>
+            <p className="isk-eyebrow" style={{ marginBottom: 12 }}>Šta dobijaš</p>
+            {benefits.map(({ Icon, bg, stroke, text }) => (
+              <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                <IconChip icon={<Icon size={13} stroke={stroke} />} bg={bg} size={28} radius={7} />
+                <span style={{ fontSize: 14, lineHeight: 1.35 }}>{text}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <div className="animate-slide-up delay-100">
-          <h1 style={{
-            fontSize: 28, fontWeight: 800, lineHeight: 1.2,
-            letterSpacing: '-0.03em', marginBottom: 10,
-          }}>
-            Šta te stvarno<br />drži uz cigaretu?
-          </h1>
-          <p style={{ color: 'var(--text-sub)', fontSize: 14, lineHeight: 1.55, marginBottom: 20 }}>
-            15 pitanja. Tačan profil zavisnosti, koliko trojiš i strategija koja funkcioniše za tebe.
+        <div className="animate-slide-up delay-400" style={{ paddingBottom: 28 }}>
+          <button className="btn-primary" onClick={onStart}>
+            Počni →
+          </button>
+          <p style={{ fontSize: 12, color: 'var(--text-sub)', marginTop: 10, textAlign: 'center' }}>
+            Bez registracije. Bez osuđivanja. Samo jasan odgovor gde se trenutno nalaziš.
           </p>
         </div>
-
-        <div className="animate-slide-up delay-200" style={{
-          display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
-          gap: 8, marginBottom: 16,
-        }}>
-          {[
-            { num: '15',   label: 'pitanja' },
-            { num: '3min', label: 'trajanje' },
-            { num: '100%', label: 'besplatno' },
-          ].map(item => (
-            <div key={item.label} style={{
-              background: 'var(--card)', borderRadius: 14, padding: '12px 8px',
-              border: '1px solid var(--border)', textAlign: 'center',
-              boxShadow: 'var(--shadow-card)',
-            }}>
-              <div style={{ fontWeight: 800, fontSize: 17, color: 'var(--ember)', letterSpacing: '-0.02em' }}>{item.num}</div>
-              <div style={{ fontSize: 11, color: 'var(--text-sub)', fontWeight: 600, marginTop: 2 }}>{item.label}</div>
-            </div>
-          ))}
-        </div>
-
-        <div className="animate-slide-up delay-300" style={{
-          background: 'var(--card)', borderRadius: 18, padding: '16px 18px',
-          border: '1px solid var(--border)', marginBottom: 20, textAlign: 'left',
-          boxShadow: 'var(--shadow-card)',
-        }}>
-          <p className="isk-eyebrow" style={{ marginBottom: 12 }}>Šta dobijaš</p>
-          {benefits.map(({ Icon, bg, stroke, text }) => (
-            <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-              <IconChip icon={<Icon size={13} stroke={stroke} />} bg={bg} size={28} radius={7} />
-              <span style={{ fontSize: 14, lineHeight: 1.35 }}>{text}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="animate-slide-up delay-400" style={{ paddingBottom: 28 }}>
-        <button className="btn-primary" onClick={onStart}>
-          Počni quiz →
-        </button>
-        <p style={{ fontSize: 12, color: 'var(--text-sub)', marginTop: 10, textAlign: 'center' }}>
-          Nema registracije. Rezultati za 3 minuta.
-        </p>
       </div>
     </div>
   );
@@ -232,8 +324,8 @@ function OnboardingScreen({ onComplete }: {
 
           {/* Two large image cards side by side */}
           <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-            <GenderCard value="muško"  label="Muško"  imgSrc="/gender-male.jpg" />
-            <GenderCard value="žensko" label="Žensko" imgSrc="/gender-female.jpg" />
+            <GenderCard value="muško"  label="Muško"  imgSrc="/iskra-man.png" />
+            <GenderCard value="žensko" label="Žensko" imgSrc="/iskra-woman.png" />
           </div>
 
           {/* Prefer not to say — small text link below */}
@@ -344,18 +436,63 @@ function OnboardingScreen({ onComplete }: {
 
 // ─── QUESTION ─────────────────────────────────────────────────────────────────
 function QuestionScreen({
-  questionIndex, total, answers, onAnswer, onBack,
+  questionIndex, total, answers, onAnswer, onBack, gender,
 }: {
   questionIndex: number; total: number;
   answers: Record<string, string>;
   onAnswer: (qId: string, optionId: string) => void;
   onBack: () => void;
+  gender: Gender;
 }) {
   const question = questions[questionIndex];
   const selected = answers[question.id];
   const progress = (questionIndex / total) * 100;
   const letters = ['A', 'B', 'C', 'D'];
   const CatIcon = CATEGORY_ICONS[question.category];
+
+  const isMale = gender !== 'žensko';
+
+  let displayQuestion = question.question;
+  let displaySubtitle = question.subtitle;
+  let displayOptions = question.options ?? [];
+
+  if (!isMale) {
+    if (question.id === 'f4') displayQuestion = 'Da li pušiš čak i kada si bolesna i ležiš u krevetu?';
+    if (question.id === 'p1') displaySubtitle = 'Budi iskrena — nema pogrešnog odgovora.';
+    if (question.id === 'p2') {
+      displayQuestion = 'Da li si ranije pokušala da prestaneš?';
+      displayOptions = [
+        { id: 'a', label: 'Nikad nisam ni pokušala', value: 0 },
+        { id: 'b', label: 'Jednom, nisam izdržala', value: 1 },
+        { id: 'c', label: 'Više puta', value: 2 },
+        { id: 'd', label: 'Jesam, ali sam se vratila', value: 3 },
+      ];
+    }
+    if (question.id === 'p3') {
+      displayOptions = [
+        { id: 'a', label: 'Apstinencijalna kriza', value: 1 },
+        { id: 'b', label: 'Stres', value: 2 },
+        { id: 'c', label: 'Nisam imala podršku', value: 3 },
+        { id: 'd', label: 'Nisam ozbiljno pokušala', value: 4 },
+      ];
+    }
+    if (question.id === 'p4') {
+      displayOptions = [
+        { id: 'a', label: 'Spremna sam', value: 3 },
+        { id: 'b', label: 'I hoću i neću', value: 2 },
+        { id: 'c', label: 'Pomalo sam zabrinuta', value: 1 },
+        { id: 'd', label: 'Nisam sigurna da mogu', value: 0 },
+      ];
+    }
+    if (question.id === 'r1') {
+      displayOptions = [
+        { id: 'a', label: 'Danas ili ove nedelje', value: 3 },
+        { id: 'b', label: 'U narednom mesecu', value: 2 },
+        { id: 'c', label: 'Kada budem spremna', value: 1 },
+        { id: 'd', label: 'Nisam sigurna', value: 0 },
+      ];
+    }
+  }
 
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 20px', height: '100dvh', display: 'flex', flexDirection: 'column' }}>
@@ -388,19 +525,19 @@ function QuestionScreen({
 
         <h2 style={{
           fontSize: 22, fontWeight: 800, lineHeight: 1.22,
-          letterSpacing: '-0.025em', marginTop: 12, marginBottom: question.subtitle ? 6 : 18,
+          letterSpacing: '-0.025em', marginTop: 12, marginBottom: displaySubtitle ? 6 : 18,
         }}>
-          {question.question}
+          {displayQuestion}
         </h2>
 
-        {question.subtitle && (
+        {displaySubtitle && (
           <p style={{ color: 'var(--text-sub)', fontSize: 13, lineHeight: 1.5, marginBottom: 16 }}>
-            {question.subtitle}
+            {displaySubtitle}
           </p>
         )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {question.options?.map((opt, i) => (
+          {displayOptions.map((opt, i) => (
             <button
               key={opt.id}
               className={`option-card ${selected === opt.id ? 'selected' : ''}`}
@@ -433,11 +570,14 @@ function QuestionScreen({
 }
 
 // ─── FEEDBACK ────────────────────────────────────────────────────────────────
-function FeedbackScreen({ feedbackIndex, answers, onContinue }: {
+function FeedbackScreen({ feedbackIndex, answers, onContinue, gender }: {
   feedbackIndex: 1 | 2;
   answers: Record<string, string>;
   onContinue: () => void;
+  gender: Gender;
 }) {
+  const isMale = gender !== 'žensko';
+
   const q1CigsMap: Record<string, number> = { a: 3, b: 8, c: 15, d: 25 };
   const cigarettesPerDay = q1CigsMap[answers['q1']] ?? 15;
   const cigarettesPerYear = cigarettesPerDay * 365;
@@ -449,6 +589,12 @@ function FeedbackScreen({ feedbackIndex, answers, onContinue }: {
     if (opt) partialScore += opt.value;
   });
   const partialLevel = partialScore <= 2 ? 'Niska' : partialScore <= 4 ? 'Umerena' : 'Visoka';
+
+  const dependencyBodyMap: Record<string, string> = {
+    Niska: 'Hemija nije glavni problem. Kod tebe su navike i okidači verovatno važniji od samog nikotina.',
+    Umerena: 'Telo se naviklo na nikotin, ali najveća bitka i dalje nije fizička — već svakodnevne rutine.',
+    Visoka: "Tvoja zavisnost je ozbiljna, ali nije neobična. To samo znači da plan mora biti pametniji od pukog 'prestani od sutra'.",
+  };
 
   const eyebrow: React.CSSProperties = {
     display: 'inline-block',
@@ -506,28 +652,42 @@ function FeedbackScreen({ feedbackIndex, answers, onContinue }: {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingTop: 32, paddingBottom: 12, textAlign: 'center' }}>
           {feedbackIndex === 1 ? (
             <>
-              <div className="animate-slide-up" style={eyebrow}>TVOJ OBRAZAC</div>
+              <div className="animate-slide-up" style={eyebrow}>TVOJ OBRAZAC PUŠENJA</div>
               <div className="animate-slide-up delay-100" style={glass}>
                 <div style={{ fontSize: 44, fontWeight: 800, color: 'white', letterSpacing: '-0.03em', lineHeight: 1, textShadow: '0 1px 8px rgba(120,50,10,0.35)' }}>
                   {cigarettesPerYear.toLocaleString('sr-RS')}
                 </div>
                 <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)', marginTop: 6, fontWeight: 600 }}>
-                  cigareta godišnje
+                  cigareta ove godine
                 </div>
               </div>
               <p className="animate-slide-up delay-200" style={{
                 color: 'rgba(255,255,255,0.92)', fontSize: 16, lineHeight: 1.6,
                 fontWeight: 500, textShadow: '0 1px 6px rgba(120,50,10,0.25)',
+                marginBottom: 8,
               }}>
-                Jutarnji pušači imaju duplo veću hemijsku zavisnost od večernjih.
+                To nije kritika.
+              </p>
+              <p className="animate-slide-up delay-200" style={{
+                color: 'rgba(255,255,255,0.92)', fontSize: 16, lineHeight: 1.6,
+                fontWeight: 500, textShadow: '0 1px 6px rgba(120,50,10,0.25)',
+                marginBottom: 8,
+              }}>
+                To je samo broj koji većina pušača nikada ne vidi crno na belo.
+              </p>
+              <p className="animate-slide-up delay-300" style={{
+                color: 'rgba(255,255,255,0.80)', fontSize: 14, lineHeight: 1.6,
+                fontWeight: 500, textShadow: '0 1px 6px rgba(120,50,10,0.25)',
+              }}>
+                Jutarnja cigareta je jedan od najjačih pokazatelja nikotinske zavisnosti.
               </p>
             </>
           ) : (
             <>
-              <div className="animate-slide-up" style={eyebrow}>ZAVISNOST OD NIKOTINA</div>
+              <div className="animate-slide-up" style={eyebrow}>TVOJA ZAVISNOST OD NIKOTINA</div>
               <div className="animate-slide-up delay-100" style={glass}>
                 <div style={{ fontSize: 26, fontWeight: 800, color: 'white', letterSpacing: '-0.02em', textShadow: '0 1px 8px rgba(120,50,10,0.35)' }}>
-                  {partialLevel} zavisnost
+                  Rezultat pokazuje: {partialLevel} zavisnost
                 </div>
                 <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)', marginTop: 6, fontWeight: 500 }}>
                   Fagerstrom skor: {partialScore} / 6
@@ -536,8 +696,15 @@ function FeedbackScreen({ feedbackIndex, answers, onContinue }: {
               <p className="animate-slide-up delay-200" style={{
                 color: 'rgba(255,255,255,0.92)', fontSize: 16, lineHeight: 1.6,
                 fontWeight: 500, textShadow: '0 1px 6px rgba(120,50,10,0.25)',
+                marginBottom: 16,
               }}>
-                Sledeći blok otkriva psihološku stranu — zašto te cigareta drži, ne samo hemija.
+                {dependencyBodyMap[partialLevel]}
+              </p>
+              <p className="animate-slide-up delay-300" style={{
+                color: 'rgba(255,255,255,0.80)', fontSize: 14, lineHeight: 1.6,
+                fontWeight: 500, textShadow: '0 1px 6px rgba(120,50,10,0.25)',
+              }}>
+                Sada prelazimo na deo koji većina pušača potcenjuje — psihološke okidače.
               </p>
             </>
           )}
@@ -556,23 +723,25 @@ function FeedbackScreen({ feedbackIndex, answers, onContinue }: {
 
 // ─── LOADING ─────────────────────────────────────────────────────────────────
 const LOADING_FACTS = [
-  'Pušači u proseku pokušaju 8–10 puta pre nego što uspešno prestanu.',
-  'Prva 3 dana su najteža — nikotin napušta telo za 72h.',
-  'Personalizovani planovi povećavaju šanse za uspeh za 3×.',
-  'Iskra prepoznaje tvoj tip i prilagođava strategiju automatski.',
+  'Većina pušača ne pada zbog nikotina. Padnu zbog iste situacije koja ih svaki put vrati.',
+  'Prva tri dana su fizički najteža. Posle toga psihologija postaje važnija od hemije.',
+  'Ljudi koji imaju konkretan plan imaju znatno veće šanse da istraju.',
 ];
 
 const LOADING_BARS = [
-  'Obrazac pušenja',
-  'Fagerstrom analiza',
-  'Psihološki profil',
-  'Personalizovana strategija',
+  'Analiza obrasca pušenja',
+  'Analiza nikotinske zavisnosti',
+  'Psihološki okidači',
+  'Generisanje preporuka',
 ];
 
-function LoadingScreen({ results, onComplete }: {
+function LoadingScreen({ results, onComplete, gender }: {
   results: QuizResults;
   onComplete: (committed: boolean) => void;
+  gender: Gender;
 }) {
+  const isMale = gender !== 'žensko';
+
   const [barProgress, setBarProgress]   = useState([0, 0, 0, 0]);
   const [factIndex, setFactIndex]       = useState(0);
   const [showModal, setShowModal]       = useState(false);
@@ -644,10 +813,11 @@ function LoadingScreen({ results, onComplete }: {
 
   return (
     <div style={{
-      minHeight: '100vh', background: 'var(--bg)',
+      height: '100dvh', background: 'var(--bg)',
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
-      padding: '40px 20px', position: 'relative',
+      padding: '32px 20px', position: 'relative',
+      overflow: 'hidden',
     }}>
       <div style={{ maxWidth: 420, width: '100%' }}>
         {/* Headline */}
@@ -662,10 +832,10 @@ function LoadingScreen({ results, onComplete }: {
             <span style={{ fontWeight: 800, fontSize: 17, letterSpacing: '-0.02em', color: 'var(--text)' }}>iskra</span>
           </div>
           <h2 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.025em', marginBottom: 8, color: 'var(--text)' }}>
-            Kreiramo tvoj plan prestanka
+            Analiziramo tvoje odgovore...
           </h2>
           <p style={{ fontSize: 14, color: 'var(--text-sub)' }}>
-            za {results.smokingProfile} · {results.cigarettesPerDay} cigareta dnevno
+            Tražimo obrasce zbog kojih ti je najteže da ostaviš cigarete.
           </p>
         </div>
 
@@ -731,14 +901,19 @@ function LoadingScreen({ results, onComplete }: {
             }}>
               <IcoFlame size={28} stroke="var(--ember)" sw={1.7} />
             </div>
+            <p style={{ fontSize: 13, color: 'var(--text-sub)', marginBottom: 10 }}>
+              Pre nego što pokažemo rezultat:
+            </p>
             <h3 style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.02em', marginBottom: 10 }}>
-              Jesi li spreman/na da ozbiljno kreneš?
+              {isMale
+                ? 'Ako dobiješ plan koji ima smisla za tebe, da li si spreman da ga ozbiljno razmotriš?'
+                : 'Ako dobiješ plan koji ima smisla za tebe, da li si spremna da ga ozbiljno razmotriš?'}
             </h3>
             <p style={{ fontSize: 14, color: 'var(--text-sub)', lineHeight: 1.6, marginBottom: 28 }}>
               Tvoj plan je gotovo spreman. Pre nego što ga vidiš — jedno pitanje.
             </p>
             <button className="btn-primary" style={{ marginBottom: 12 }} onClick={() => handleChoice(true)}>
-              Da, spreman/na sam
+              {isMale ? 'Da, spreman sam' : 'Da, spremna sam'}
             </button>
             <button
               onClick={() => handleChoice(false)}
@@ -749,7 +924,7 @@ function LoadingScreen({ results, onComplete }: {
                 padding: 10, width: '100%',
               }}
             >
-              Još razmišljam
+              {isMale ? 'Još nisam siguran' : 'Još nisam sigurna'}
             </button>
           </div>
         </div>
@@ -759,13 +934,14 @@ function LoadingScreen({ results, onComplete }: {
 }
 
 // ─── PARTIAL REVEAL ──────────────────────────────────────────────────────────
-function PartialReveal({ results, onContinue }: { results: QuizResults; onContinue: () => void }) {
-  const profile = profileDescriptions[results.smokingProfile];
+function PartialReveal({ results, onContinue, gender }: { results: QuizResults; onContinue: () => void; gender: Gender }) {
   const levelColors: Record<string, string> = {
     'Niska': '#2D8A4E', 'Umerena': '#BA7517', 'Visoka': '#E8621A', 'Vrlo visoka': '#C0392B',
   };
   const color = levelColors[results.fagerstromLevel];
   const pct = (results.fagerstromScore / 6) * 100;
+  const partialBd = results.driverBreakdown ?? { stress: 25, habit: 25, social: 25, nicotine: 25 };
+  const partialRs100 = results.readinessScore100 ?? 0;
 
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 20px 40px' }}>
@@ -779,24 +955,25 @@ function PartialReveal({ results, onContinue }: { results: QuizResults; onContin
           <IcoTarget size={32} stroke="var(--ember)" sw={1.8} />
         </div>
         <h2 className="animate-slide-up" style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.025em', marginBottom: 8 }}>
-          Evo deo rezultata
+          Tvoj rezultat je spreman
         </h2>
         <p className="animate-slide-up delay-100" style={{ color: 'var(--text-sub)', fontSize: 15, marginBottom: 36 }}>
-          Kompletan izveštaj čeka — odmah.
+          Već vidimo obrazac koji te najčešće vraća cigareti.
         </p>
       </div>
 
+      {/* Card 1 — Driver Breakdown */}
       <div className="animate-slide-up delay-100 result-card" style={{ marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-          <IconChip icon={<IcoMsg size={20} stroke="var(--ember)" sw={1.9} />} bg="var(--ember-tint)" />
+          <IconChip icon={<IcoTarget size={20} stroke="var(--ember)" sw={1.9} />} bg="var(--ember-tint)" />
           <div>
-            <div className="isk-eyebrow" style={{ marginBottom: 3 }}>Tvoj profil</div>
-            <div style={{ fontWeight: 800, fontSize: 18, color: 'var(--text)' }}>{results.smokingProfile}</div>
+            <div className="isk-eyebrow" style={{ marginBottom: 3 }}>Dominantni okidači</div>
           </div>
         </div>
-        <p style={{ fontSize: 14, color: 'var(--text-sub)', lineHeight: 1.65 }}>{profile.description}</p>
+        <DriverBreakdownChart breakdown={partialBd} />
       </div>
 
+      {/* Card 2 — Fagerstrom */}
       <div className="animate-slide-up delay-200 result-card" style={{ marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
           <IconChip icon={<IcoActivity size={20} stroke="#4A8AC4" sw={1.9} />} bg="#EEF4FF" />
@@ -810,38 +987,55 @@ function PartialReveal({ results, onContinue }: { results: QuizResults; onContin
         </div>
       </div>
 
+      {/* Emotional stat block */}
+      <div className="animate-slide-up delay-300" style={{ paddingTop: 24, paddingBottom: 24, textAlign: 'center' }}>
+        <div style={{ fontSize: 44, fontWeight: 800, color: 'var(--ember)', letterSpacing: '-0.03em', lineHeight: 1 }}>
+          {results.cigarettesPerYear.toLocaleString('sr-RS')}
+        </div>
+        <div style={{ fontSize: 15, color: 'var(--text-sub)', marginTop: 6 }}>cigareta ove godine</div>
+        <div style={{ fontSize: 13, color: 'var(--text-sub)', marginTop: 6 }}>
+          To je broj koji većina pušača nikada ne vidi crno na belo.
+        </div>
+      </div>
+
+      {/* Locked card */}
       <div className="animate-slide-up delay-300" style={{
         background: 'var(--card)', borderRadius: 20, padding: 24,
         border: '1.5px dashed var(--border)', marginBottom: 28,
         position: 'relative', overflow: 'hidden',
         boxShadow: 'var(--shadow-card)',
       }}>
+        {/* Background content — blurred by overlay */}
+        <div style={{ padding: '16px 0' }}>
+          {[
+            { label: 'Godišnji trošak', value: `${results.annualCostRSD.toLocaleString('sr-RS')} RSD` },
+            { label: 'Readiness Score', value: `${partialRs100} / 100` },
+            { label: 'Strategija', value: results.smokingProfile },
+          ].map((row, i) => (
+            <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: i < 2 ? '1px solid var(--border)' : 'none' }}>
+              <span style={{ fontSize: 14, fontWeight: 600 }}>{row.label}</span>
+              <span style={{ fontSize: 14, fontWeight: 800 }}>{row.value}</span>
+            </div>
+          ))}
+        </div>
+        {/* Blur overlay */}
         <div style={{
           position: 'absolute', inset: 0,
-          backdropFilter: 'blur(4px)',
-          background: 'rgba(253,252,250,0.75)',
+          backdropFilter: 'blur(5px)',
+          background: 'rgba(253,252,250,0.72)',
           display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center',
-          zIndex: 2, borderRadius: 18,
+          zIndex: 2, gap: 8,
         }}>
-          <div style={{ marginBottom: 8 }}>
-            <IcoLock size={30} stroke="var(--ember)" sw={1.8} />
-          </div>
-          <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4 }}>Još 3 rezultata čekaju</div>
-          <div style={{ fontSize: 14, color: 'var(--text-sub)' }}>Ostavi email da odblokiraš</div>
-        </div>
-        <div style={{ opacity: 0.15 }}>
-          <div style={{ fontWeight: 700, marginBottom: 8 }}>Godišnji trošak</div>
-          <div style={{ fontSize: 32, fontWeight: 800 }}>?????? RSD</div>
-          <div style={{ marginTop: 12, fontWeight: 700 }}>Tvoja strategija</div>
-          <div style={{ fontSize: 14, color: 'var(--text-sub)', marginTop: 4 }}>Personalizovani plan za tvoj profil...</div>
-          <div style={{ marginTop: 12, fontWeight: 700 }}>Datum prestanka</div>
+          <IcoLock size={24} stroke="var(--ember)" sw={1.8} />
+          <div style={{ fontWeight: 800, fontSize: 15 }}>Otključaj preostale rezultate</div>
+          <div style={{ fontSize: 13, color: 'var(--text-sub)' }}>Ostavi email ispod</div>
         </div>
       </div>
 
       <div className="animate-slide-up delay-400">
         <button className="btn-primary" onClick={onContinue}>
-          Odblokirati kompletan izveštaj →
+          Otključaj kompletan izveštaj →
         </button>
       </div>
     </div>
@@ -849,10 +1043,11 @@ function PartialReveal({ results, onContinue }: { results: QuizResults; onContin
 }
 
 // ─── EMAIL GATE ───────────────────────────────────────────────────────────────
-function EmailGate({ onSubmit, loading, prefillName }: {
+function EmailGate({ onSubmit, loading, prefillName, gender }: {
   onSubmit: (email: string, name: string) => void;
   loading: boolean;
   prefillName: string;
+  gender: Gender;
 }) {
   const [email, setEmail] = useState('');
   const [name, setName]   = useState(prefillName);
@@ -872,10 +1067,10 @@ function EmailGate({ onSubmit, loading, prefillName }: {
           <IcoMail size={36} stroke="var(--ember)" sw={1.7} />
         </div>
         <h2 className="animate-slide-up" style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.025em', marginBottom: 12 }}>
-          Pošalji mi kompletan<br />izveštaj
+          Tvoj kompletan izveštaj je spreman.
         </h2>
-        <p className="animate-slide-up delay-100" style={{ color: 'var(--text-sub)', fontSize: 15, lineHeight: 1.6 }}>
-          Dobićeš: tačan trošak u RSD, strategiju za tvoj profil, preporučeni datum prestanka i poziciju na Iskra Club listi.
+        <p className="animate-slide-up delay-100" style={{ color: 'var(--text-sub)', fontSize: 15, lineHeight: 1.6, marginBottom: 16 }}>
+          Otključaj preostale rezultate i sačuvaj kopiju za kasnije.
         </p>
       </div>
 
@@ -902,13 +1097,13 @@ function EmailGate({ onSubmit, loading, prefillName }: {
 
       <div className="animate-slide-up delay-300" style={{ marginBottom: 24 }}>
         <button className="btn-primary" disabled={!isValid || loading} onClick={handleSubmit}>
-          {loading ? 'Šaljem...' : 'Vidi kompletan izveštaj →'}
+          {loading ? 'Šaljem...' : 'Pošalji izveštaj →'}
         </button>
       </div>
 
       <div className="animate-fade-in delay-400" style={{ textAlign: 'center' }}>
         <p style={{ fontSize: 12, color: 'var(--text-sub)', lineHeight: 1.7 }}>
-          Nikad spam. Samo tvoji rezultati i obaveštenje kad Iskra izađe.
+          Nikad spam. Samo tvoji rezultati i obaveštenje kada Iskra bude dostupna.
         </p>
       </div>
 
@@ -1006,8 +1201,216 @@ function FaqSection() {
   );
 }
 
+// ─── FUTURE YOU PROMO ────────────────────────────────────────────────────────
+function PromoScreen({ onContinue, gender }: { onContinue: () => void; gender: Gender }) {
+  const isMale = gender !== 'žensko';
+
+  const features = [
+    {
+      icon: <IcoMsg size={20} stroke="var(--ember)" sw={1.9} />,
+      title: 'Prepoznaj okidače',
+      body: 'Iskra prati situacije koje najčešće prethode cigareti i pomaže ti da ih prepoznaš pre nego što postanu automatska reakcija.',
+    },
+    {
+      icon: <IcoFlame size={20} stroke="var(--ember)" sw={1.9} />,
+      title: 'Održi niz',
+      body: 'Dnevni check-in i mali koraci pomažu da ostaneš na putu čak i kada motivacija padne.',
+    },
+    {
+      icon: <IcoActivity size={20} stroke="var(--ember)" sw={1.9} />,
+      title: 'Vidi napredak',
+      body: 'Prati dane bez cigarete, novac koji ostaje kod tebe i male pobede koje se lako zaborave.',
+    },
+  ];
+
+  const handleMockupLoad = (e: React.SyntheticEvent<HTMLIFrameElement>) => {
+    try {
+      const doc = (e.target as HTMLIFrameElement).contentDocument;
+      if (!doc) return;
+      const style = doc.createElement('style');
+      style.textContent = `
+        #ui, #hint { display: none !important; }
+        body {
+          background: linear-gradient(158deg, #F0701F 0%, #E8621A 58%, #D2581A 100%) !important;
+        }
+        body::before {
+          content: '';
+          position: fixed;
+          inset: 0;
+          background-image: url('/canyon-bg.png');
+          background-size: cover;
+          background-position: center 40%;
+          opacity: 0.42;
+          mix-blend-mode: soft-light;
+          filter: saturate(0.65);
+          pointer-events: none;
+          z-index: 0;
+        }
+      `;
+      doc.head.appendChild(style);
+    } catch { /* cross-origin guard */ }
+  };
+
+  return (
+    <div style={{ paddingBottom: 60 }}>
+
+      {/* Text header — constrained */}
+      <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 20px' }}>
+        <div style={{ paddingTop: 48, textAlign: 'center', marginBottom: 8 }}>
+          <div className="animate-scale-in" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            background: 'var(--ember-tint)', borderRadius: 'var(--r-pill)',
+            padding: '5px 14px', marginBottom: 20,
+          }}>
+            <IcoFlame size={12} stroke="var(--ember)" sw={2} />
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--ember)' }}>
+              ZAMISLI SEBE ZA 104 DANA
+            </span>
+          </div>
+
+          <h2 className="animate-slide-up" style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1.25, marginBottom: 12 }}>
+            Već znaš šta te vraća cigareti.<br />
+            <span style={{ color: 'var(--ember)' }}>Iskra ti pomaže da prekineš taj obrazac.</span>
+          </h2>
+          <p className="animate-slide-up delay-100" style={{ color: 'var(--text-sub)', fontSize: 14, lineHeight: 1.65, marginBottom: 28 }}>
+            Ovo nije još jedan motivacioni program. Iskra koristi rezultate koje {isMale ? 'si upravo dobio' : 'si upravo dobila'} da bi prilagodila podršku tvom profilu, tvojim okidačima i tvom tempu. Dan po dan.
+          </p>
+        </div>
+      </div>
+
+      {/* Constrained content — mockup inside container */}
+      <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 20px' }}>
+
+      {/* Mockup — inside container, textured rounded card */}
+      <div className="animate-slide-up delay-200" style={{
+        position: 'relative', overflow: 'hidden',
+        borderRadius: 24,
+        background: 'linear-gradient(158deg, #F0701F 0%, #E8621A 58%, #D2581A 100%)',
+        marginBottom: 24,
+        boxShadow: '0 16px 48px rgba(232,98,26,0.22), 0 4px 16px rgba(0,0,0,0.08)',
+      }}>
+        {/* canyon texture layer */}
+        <div style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
+          backgroundImage: "url('/canyon-bg.png')",
+          backgroundSize: 'cover', backgroundPosition: 'center 40%',
+          opacity: 0.42, mixBlendMode: 'soft-light', filter: 'saturate(0.65)',
+          borderRadius: 24,
+        }} />
+        {/* sheen */}
+        <div style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1,
+          background: 'linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(80,40,10,0.06) 45%, rgba(120,60,16,0.20) 100%)',
+          borderRadius: 24,
+        }} />
+        <iframe
+          src="/iskra-animated-mockup.html"
+          onLoad={handleMockupLoad}
+          style={{
+            width: '100%',
+            height: 600,
+            border: 'none', display: 'block',
+            position: 'relative', zIndex: 2,
+            background: 'transparent',
+          }}
+          loading="lazy"
+          title="Iskra app preview"
+          scrolling="no"
+        />
+      </div>
+
+      {/* Stats strip */}
+      <div className="animate-slide-up delay-200" style={{
+        display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
+        gap: 8, marginBottom: 28, marginTop: 24,
+      }}>
+        {[
+          { num: '104', label: 'dana slobodan' },
+          { num: '41.600', label: 'RSD ušteđeno' },
+          { num: '2.080', label: 'cigareta iza tebe' },
+        ].map(s => (
+          <div key={s.label} style={{
+            background: 'var(--card)', borderRadius: 'var(--r-card)',
+            border: '1px solid var(--border)', padding: '14px 10px',
+            textAlign: 'center', boxShadow: 'var(--shadow-card)',
+          }}>
+            <div style={{ fontWeight: 800, fontSize: 18, color: 'var(--ember)', letterSpacing: '-0.02em', lineHeight: 1 }}>{s.num}</div>
+            <div style={{ fontSize: 11, color: 'var(--text-sub)', fontWeight: 600, marginTop: 4, lineHeight: 1.3 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Feature cards */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 28 }}>
+        {features.map(({ icon, title, body }) => (
+          <div key={title} style={{
+            display: 'flex', alignItems: 'flex-start', gap: 14,
+            background: 'var(--card)', border: '1.5px solid var(--border)',
+            borderRadius: 'var(--r-card)', padding: '14px 16px',
+            boxShadow: 'var(--shadow-card)',
+          }}>
+            <div style={{
+              width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+              background: 'var(--ember-tint)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>{icon}</div>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)', marginBottom: 4 }}>{title}</div>
+              <div style={{ fontSize: 13, color: 'var(--text-sub)', lineHeight: 1.55 }}>{body}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Social proof */}
+      <div style={{
+        background: 'var(--faint)', borderRadius: 'var(--r-card-lg)',
+        padding: '20px 20px', marginBottom: 28,
+        borderLeft: '3px solid var(--ember)',
+      }}>
+        <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--text)', marginBottom: 10 }}>
+          Nisi jedini kome je dosta počinjanja ispočetka.
+        </div>
+        <p style={{ fontSize: 13, color: 'var(--body-text)', lineHeight: 1.7 }}>
+          Većina pušača zna da bi trebalo da prestane. Problem nije znanje. Problem je šta se dešava u trenutku kada dođe stres, navika ili društveni pritisak. Tu Iskra pomaže.
+        </p>
+      </div>
+
+      {/* Transition to results */}
+      <div style={{
+        textAlign: 'center', padding: '28px 20px',
+        background: 'var(--card)', borderRadius: 'var(--r-card-lg)',
+        border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: 16,
+            background: 'var(--ember-tint)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <IcoTarget size={28} stroke="var(--ember)" sw={1.8} />
+          </div>
+        </div>
+        <div style={{ fontWeight: 800, fontSize: 18, letterSpacing: '-0.02em', marginBottom: 8 }}>
+          Tvoj kompletan izveštaj je spreman.
+        </div>
+        <p style={{ fontSize: 14, color: 'var(--text-sub)', lineHeight: 1.6, marginBottom: 20 }}>
+          Pogledaj svoje rezultate i strategiju prilagođenu tvom profilu.
+        </p>
+        <button className="btn-primary" onClick={onContinue}>
+          Pogledaj rezultate →
+        </button>
+      </div>
+
+      </div> {/* end constrained */}
+    </div>
+  );
+}
+
 // ─── RESULTS ──────────────────────────────────────────────────────────────────
-function ResultsScreen({ results, email, name }: { results: QuizResults; email: string; name: string }) {
+function ResultsScreen({ results, email, name, gender }: { results: QuizResults; email: string; name: string; gender: Gender }) {
+  const isMale = gender !== 'žensko';
+
   const profile = profileDescriptions[results.smokingProfile];
   const levelColors: Record<string, string> = {
     'Niska': '#2D8A4E', 'Umerena': '#BA7517', 'Visoka': '#E8621A', 'Vrlo visoka': '#C0392B',
@@ -1025,6 +1428,16 @@ function ResultsScreen({ results, email, name }: { results: QuizResults; email: 
   const quitDate = new Date();
   quitDate.setDate(quitDate.getDate() + daysUntil);
   const quitDateStr = quitDate.toLocaleDateString('sr-RS', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  const bd = results.driverBreakdown ?? { stress: 25, habit: 25, social: 25, nicotine: 25 };
+  const rs100 = results.readinessScore100 ?? 0;
+  const driverEntries = [
+    { key: 'stress',   label: 'Stres i pritisak',    pct: bd.stress },
+    { key: 'habit',    label: 'Navika i rutina',      pct: bd.habit },
+    { key: 'social',   label: 'Društvene situacije',  pct: bd.social },
+    { key: 'nicotine', label: 'Nikotinska zavisnost', pct: bd.nicotine },
+  ].sort((a, b) => b.pct - a.pct);
+  const dominantDriver = driverEntries[0];
 
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 20px 60px' }}>
@@ -1045,25 +1458,32 @@ function ResultsScreen({ results, email, name }: { results: QuizResults; email: 
         </p>
       </div>
 
-      {/* Profile */}
-      <div className="animate-slide-up delay-100 result-card" style={{ marginBottom: 14 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-          <IconChip icon={<IcoMsg size={22} stroke="var(--ember)" sw={1.9} />} bg="var(--ember-tint)" size={48} radius={14} />
-          <div>
-            <div className="isk-eyebrow" style={{ marginBottom: 3 }}>Profil pušača</div>
-            <div style={{ fontWeight: 800, fontSize: 20, color: 'var(--text)' }}>{results.smokingProfile}</div>
-          </div>
-        </div>
-        <p style={{ fontSize: 14, lineHeight: 1.65, marginBottom: 14, color: 'var(--body-text)' }}>{profile.description}</p>
-        <div style={{
-          background: 'var(--ember-tint)', borderRadius: 12, padding: '14px 16px',
-          borderLeft: '3px solid var(--ember)',
-        }}>
-          <p style={{ fontSize: 14, lineHeight: 1.65, fontWeight: 500 }}>{profile.strategy}</p>
-        </div>
+      {/* App positioning sentence */}
+      <div className="animate-slide-up delay-100" style={{
+        background: 'var(--faint)', borderRadius: 12, padding: '10px 14px',
+        marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10,
+      }}>
+        <IcoFlame size={14} stroke="var(--ember)" sw={2} />
+        <p style={{ fontSize: 12, color: 'var(--text-sub)', lineHeight: 1.5 }}>
+          Ovo je isti dijagnostički sistem koji Iskra koristi za personalizaciju programa.
+        </p>
       </div>
 
-      {/* Fagerstrom */}
+      {/* Card 1 — Dominant Driver Breakdown */}
+      <div className="animate-slide-up delay-100 result-card" style={{ marginBottom: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+          <IconChip icon={<IcoTarget size={22} stroke="var(--ember)" sw={1.9} />} bg="var(--ember-tint)" size={48} radius={14} />
+          <div>
+            <div className="isk-eyebrow" style={{ marginBottom: 3 }}>Dominantni okidači</div>
+            <div style={{ fontWeight: 800, fontSize: 18, color: 'var(--text)' }}>
+              {dominantDriver.pct}% — {dominantDriver.label}
+            </div>
+          </div>
+        </div>
+        <DriverBreakdownChart breakdown={results.driverBreakdown ?? { stress: 25, habit: 25, social: 25, nicotine: 25 }} />
+      </div>
+
+      {/* Card 2 — Fagerstrom */}
       <div className="animate-slide-up delay-200 result-card" style={{ marginBottom: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -1088,7 +1508,7 @@ function ResultsScreen({ results, email, name }: { results: QuizResults; email: 
         </p>
       </div>
 
-      {/* Financial */}
+      {/* Card 3 — Financial */}
       <div className="animate-slide-up delay-300 result-card" style={{ marginBottom: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
           <IconChip icon={<IcoCoin size={22} stroke="#2D8A4E" sw={1.9} />} bg="#E1F1E1" size={48} radius={14} />
@@ -1118,7 +1538,64 @@ function ResultsScreen({ results, email, name }: { results: QuizResults; email: 
         )}
       </div>
 
-      {/* Quit date */}
+      {/* Card 4 — Readiness Score */}
+      <div className="animate-slide-up result-card" style={{ marginBottom: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+          <IconChip icon={<IcoFlame size={22} stroke="#D4547E" sw={1.9} />} bg="#FFF0F6" size={48} radius={14} />
+          <div>
+            <div className="isk-eyebrow" style={{ marginBottom: 3 }}>Readiness Score</div>
+            <div style={{ fontWeight: 800, fontSize: 28, color: 'var(--text)', letterSpacing: '-0.02em', lineHeight: 1 }}>
+              {rs100} <span style={{ fontSize: 16, color: 'var(--text-sub)', fontWeight: 600 }}>/ 100</span>
+            </div>
+          </div>
+        </div>
+        <div className="progress-bar" style={{ marginBottom: 14 }}>
+          <div className="progress-fill" style={{
+            width: `${rs100}%`,
+            background: rs100 >= 60 ? '#2D8A4E' : rs100 >= 35 ? '#BA7517' : '#E8621A',
+          }} />
+        </div>
+        {(() => {
+          const readinessColor = rs100 >= 60 ? '#2D8A4E' : rs100 >= 35 ? '#BA7517' : '#E8621A';
+          const readinessBg    = rs100 >= 60 ? '#F0FFF4' : rs100 >= 35 ? '#FFF8EC' : 'var(--ember-tint)';
+          const readinessText  = rs100 >= 70
+            ? 'Motivacija i plan su na dobrom nivou — potrebna je samo prava podrška.'
+            : rs100 >= 40
+            ? 'Plan još nije dovoljno jasan. Tu najčešće pokušaji zastanu.'
+            : 'Razumeti zašto pušiš je već prvi korak.';
+          return (
+            <div style={{
+              display: 'inline-flex', alignItems: 'flex-start', gap: 8,
+              background: readinessBg, borderRadius: 'var(--r-pill)',
+              padding: '8px 12px',
+            }}>
+              <span style={{ flexShrink: 0, marginTop: 1, display: 'flex' }}><IcoInfo size={14} stroke={readinessColor} sw={2} /></span>
+              <span style={{ fontSize: 13, color: readinessColor, fontWeight: 600, lineHeight: 1.5 }}>{readinessText}</span>
+            </div>
+          );
+        })()}
+      </div>
+
+      {/* Card 5 — Smoking Profile */}
+      <div className="animate-slide-up result-card" style={{ marginBottom: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+          <IconChip icon={<IcoMsg size={22} stroke="var(--ember)" sw={1.9} />} bg="var(--ember-tint)" size={48} radius={14} />
+          <div>
+            <div className="isk-eyebrow" style={{ marginBottom: 3 }}>Profil pušača</div>
+            <div style={{ fontWeight: 800, fontSize: 20, color: 'var(--text)' }}>{results.smokingProfile}</div>
+          </div>
+        </div>
+        <p style={{ fontSize: 14, lineHeight: 1.65, marginBottom: 14, color: 'var(--body-text)' }}>{profile.description}</p>
+        <p style={{ fontSize: 12, color: 'var(--text-sub)', marginBottom: 8, fontWeight: 600 }}>Strategija za tvoj profil:</p>
+        <div style={{
+          background: 'var(--ember-tint)', borderRadius: 12, padding: '14px 16px',
+          borderLeft: '3px solid var(--ember)',
+        }}>
+          <p style={{ fontSize: 14, lineHeight: 1.65, fontWeight: 500 }}>{profile.strategy}</p>
+        </div>
+      </div>
+
+      {/* Card 6 — Quit date */}
       <div className="animate-slide-up delay-400 result-card" style={{ marginBottom: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <IconChip icon={<IcoCalendar size={22} stroke="#D4547E" sw={1.9} />} bg="#FFF0F6" size={48} radius={14} />
@@ -1130,7 +1607,7 @@ function ResultsScreen({ results, email, name }: { results: QuizResults; email: 
         </div>
       </div>
 
-      {/* Iskra app teaser — feature list */}
+      {/* Card 7 — Iskra app teaser */}
       <div className="animate-slide-up result-card" style={{ marginBottom: 14 }}>
         <div className="isk-eyebrow" style={{ marginBottom: 4 }}>Šta Iskra radi za tvoj profil</div>
         <p style={{ fontSize: 13, color: 'var(--text-sub)', marginBottom: 16, lineHeight: 1.5 }}>
@@ -1211,10 +1688,10 @@ function ResultsScreen({ results, email, name }: { results: QuizResults; email: 
             <IcoCheck size={26} stroke="white" sw={2.5} />
           </div>
           <div style={{ fontWeight: 800, fontSize: 22, color: 'white', marginBottom: 8, textShadow: '0 1px 8px rgba(120,50,10,0.35)', letterSpacing: '-0.02em' }}>
-            Na listi si.
+            {isMale ? 'Prijavljen si na Iskra Club listu.' : 'Prijavljena si na Iskra Club listu.'}
           </div>
           <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.88)', lineHeight: 1.6 }}>
-            Bićeš prvi/a koji dobija pristup.
+            {isMale ? 'Bićeš među prvima koji dobijaju pristup.' : 'Bićeš među prvima koje dobijaju pristup.'}
           </p>
         </div>
       </div>
@@ -1276,7 +1753,9 @@ function ResultsScreen({ results, email, name }: { results: QuizResults; email: 
           className="btn-primary"
           style={{ width: 'auto', padding: '14px 28px', fontSize: 14, display: 'inline-flex', alignItems: 'center', gap: 8 }}
           onClick={() => {
-            const text = `Upravo sam uradio/la Iskra quiz o pušenju. Fascinantno tačno. Probaj: quiz.iskraclub.rs`;
+            const text = isMale
+              ? 'Upravo sam uradio Iskra kviz o pušenju. Iznenađujuće tačno. Probaj: quiz.iskraclub.com'
+              : 'Upravo sam uradila Iskra kviz o pušenju. Iznenađujuće tačno. Probaj: quiz.iskraclub.com';
             if (navigator.share) {
               navigator.share({ text, url: window.location.href });
             } else {
@@ -1300,7 +1779,7 @@ export default function Home() {
   const [results, setResults] = useState<QuizResults | null>(null);
   const [email, setEmail] = useState('');
   const [name, setName]   = useState('');
-  const [, setGender]     = useState<Gender | null>(null);
+  const [gender, setGender] = useState<Gender | null>(null);
   const [packPrice, setPackPrice] = useState(450);
   const [emailLoading, setEmailLoading] = useState(false);
   const [feedbackIndex, setFeedbackIndex] = useState<1 | 2>(1);
@@ -1360,12 +1839,14 @@ export default function Home() {
       });
     } catch { /* continue */ }
     setEmailLoading(false);
-    setStage('results');
+    setStage('promo');
   };
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [stage, questionIndex]);
+
+  const resolvedGender: Gender = gender ?? 'muško';
 
   return (
     <main style={{ minHeight: '100vh', background: 'var(--bg)' }}>
@@ -1380,6 +1861,7 @@ export default function Home() {
           answers={answers}
           onAnswer={handleAnswer}
           onBack={handleBack}
+          gender={resolvedGender}
         />
       )}
       {stage === 'feedback' && (
@@ -1387,17 +1869,45 @@ export default function Home() {
           feedbackIndex={feedbackIndex}
           answers={answers}
           onContinue={handleContinueFeedback}
+          gender={resolvedGender}
         />
       )}
       {stage === 'loading' && results && (
         <LoadingScreen
           results={results}
           onComplete={handleLoadingComplete}
+          gender={resolvedGender}
         />
       )}
-      {stage === 'partial' && results && <PartialReveal results={results} onContinue={() => setStage('email')} />}
-      {stage === 'email' && <EmailGate onSubmit={handleEmailSubmit} loading={emailLoading} prefillName={name} />}
-      {stage === 'results' && results && <ResultsScreen results={results} email={email} name={name} />}
+      {stage === 'partial' && results && (
+        <PartialReveal
+          results={results}
+          onContinue={() => setStage('email')}
+          gender={resolvedGender}
+        />
+      )}
+      {stage === 'email' && (
+        <EmailGate
+          onSubmit={handleEmailSubmit}
+          loading={emailLoading}
+          prefillName={name}
+          gender={resolvedGender}
+        />
+      )}
+      {stage === 'promo' && (
+        <PromoScreen
+          onContinue={() => setStage('results')}
+          gender={resolvedGender}
+        />
+      )}
+      {stage === 'results' && results && (
+        <ResultsScreen
+          results={results}
+          email={email}
+          name={name}
+          gender={resolvedGender}
+        />
+      )}
     </main>
   );
 }

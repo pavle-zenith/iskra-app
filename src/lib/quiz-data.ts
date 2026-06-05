@@ -26,11 +26,11 @@ export const questions: Question[] = [
     category: 'pattern',
     type: 'single',
     question: 'Koliko cigareta pušiš dnevno?',
-    subtitle: 'Uključi i one koje popiješ u kafani ili na pauzama.',
+    subtitle: 'Uključi i one uz kafu, piće ili na pauzi.',
     options: [
-      { id: 'a', label: '1–5 cigareta', value: 0 },
-      { id: 'b', label: '6–10 cigareta', value: 1 },
-      { id: 'c', label: '11–20 cigareta', value: 2 },
+      { id: 'a', label: '1–5', value: 0 },
+      { id: 'b', label: '6–10', value: 1 },
+      { id: 'c', label: '11–20', value: 2 },
       { id: 'd', label: 'Više od 20', value: 3 },
     ],
   },
@@ -38,7 +38,7 @@ export const questions: Question[] = [
     id: 'q2',
     category: 'pattern',
     type: 'single',
-    question: 'Koliko godina pušiš?',
+    question: 'Koliko dugo pušiš?',
     options: [
       { id: 'a', label: 'Manje od 2 godine', value: 0 },
       { id: 'b', label: '2–5 godina', value: 1 },
@@ -50,13 +50,12 @@ export const questions: Question[] = [
     id: 'q3',
     category: 'pattern',
     type: 'single',
-    question: 'Kada najčešće pušiš?',
-    subtitle: 'Izaberi situaciju koja te prvi put prikaže ujutru.',
+    question: 'Kada najčešće zapališ prvu cigaretu u toku dana?',
     options: [
       { id: 'a', label: 'Uz jutarnju kafu', value: 3 },
-      { id: 'b', label: 'Na pauzama na poslu', value: 2 },
-      { id: 'c', label: 'U društvu, uz piće', value: 1 },
-      { id: 'd', label: 'Uveče, kad se odmorim', value: 0 },
+      { id: 'b', label: 'Na poslu ili pauzi', value: 2 },
+      { id: 'c', label: 'U društvu', value: 1 },
+      { id: 'd', label: 'Uveče', value: 0 },
     ],
   },
 
@@ -66,13 +65,13 @@ export const questions: Question[] = [
     category: 'fagerstrom',
     type: 'single',
     fagerstromKey: 'first_cigarette',
-    question: 'Koliko brzo po buđenju pušiš prvu cigaretu?',
+    question: 'Koliko brzo nakon buđenja zapališ prvu cigaretu?',
     subtitle: 'Ovo je jedan od najvažnijih pokazatelja zavisnosti.',
     options: [
       { id: 'a', label: 'U prvih 5 minuta', value: 3 },
       { id: 'b', label: '6–30 minuta', value: 2 },
       { id: 'c', label: '31–60 minuta', value: 1 },
-      { id: 'd', label: 'Nakon sat vremena', value: 0 },
+      { id: 'd', label: 'Posle sat vremena', value: 0 },
     ],
   },
   {
@@ -80,8 +79,7 @@ export const questions: Question[] = [
     category: 'fagerstrom',
     type: 'single',
     fagerstromKey: 'no_smoking_zone',
-    question: 'Da li ti je teško da ne pušiš na mestima gde je zabranjeno?',
-    subtitle: 'Na primer u bolnici, avionu, bioskopu.',
+    question: 'Da li ti je teško da ne pušiš tamo gde je zabranjeno?',
     options: [
       { id: 'a', label: 'Da', value: 1 },
       { id: 'b', label: 'Ne', value: 0 },
@@ -92,10 +90,10 @@ export const questions: Question[] = [
     category: 'fagerstrom',
     type: 'single',
     fagerstromKey: 'morning_most',
-    question: 'Koja ti je cigareta najteža da izostaviš?',
+    question: 'Koje cigarete bi ti bilo najteže da se odrekneš?',
     options: [
-      { id: 'a', label: 'Prva ujutru', value: 1 },
-      { id: 'b', label: 'Neka druga', value: 0 },
+      { id: 'a', label: 'Prve ujutru', value: 1 },
+      { id: 'b', label: 'Neke druge', value: 0 },
     ],
   },
   {
@@ -103,7 +101,8 @@ export const questions: Question[] = [
     category: 'fagerstrom',
     type: 'single',
     fagerstromKey: 'sick_smoking',
-    question: 'Da li pušiš čak i kada si bolestan/a i ležiš u krevetu?',
+    // Male form stored; female override in QuestionScreen
+    question: 'Da li pušiš čak i kada si bolestan i ležiš u krevetu?',
     options: [
       { id: 'a', label: 'Da', value: 1 },
       { id: 'b', label: 'Ne', value: 0 },
@@ -115,11 +114,11 @@ export const questions: Question[] = [
     id: 'h1',
     category: 'health',
     type: 'single',
-    question: 'Da li primetiš kašalj ili nedostatak vazduha?',
+    question: 'Da li primećuješ kašalj ili nedostatak vazduha?',
     options: [
       { id: 'a', label: 'Retko ili nikad', value: 0 },
       { id: 'b', label: 'Povremeno', value: 1 },
-      { id: 'c', label: 'Često, posebno ujutru', value: 2 },
+      { id: 'c', label: 'Često', value: 2 },
       { id: 'd', label: 'Svakodnevno', value: 3 },
     ],
   },
@@ -127,24 +126,23 @@ export const questions: Question[] = [
     id: 'h2',
     category: 'health',
     type: 'single',
-    question: 'Kako ocenjuješ svoje fizičke kapacitete u poređenju sa pre?',
+    question: 'Kako ocenjuješ svoje fizičke kapacitete danas u odnosu na ranije?',
     options: [
       { id: 'a', label: 'Isti su', value: 0 },
-      { id: 'b', label: 'Malo manji', value: 1 },
-      { id: 'c', label: 'Primetno manji', value: 2 },
-      { id: 'd', label: 'Znatno ograničeni', value: 3 },
+      { id: 'b', label: 'Malo slabiji', value: 1 },
+      { id: 'c', label: 'Primetno slabiji', value: 2 },
+      { id: 'd', label: 'Znatno slabiji', value: 3 },
     ],
   },
   {
     id: 'h3',
     category: 'health',
     type: 'single',
-    question: 'Da li imaš nekog bliskog ko je oboleo zbog pušenja?',
-    subtitle: 'Roditelj, baka/deda, prijatelj.',
+    question: 'Da li imaš nekoga bliskog ko je imao ozbiljne zdravstvene probleme zbog pušenja?',
     options: [
       { id: 'a', label: 'Ne', value: 0 },
-      { id: 'b', label: 'Da, jednog', value: 1 },
-      { id: 'c', label: 'Da, više', value: 2 },
+      { id: 'b', label: 'Jednu osobu', value: 1 },
+      { id: 'c', label: 'Više osoba', value: 2 },
     ],
   },
 
@@ -153,11 +151,12 @@ export const questions: Question[] = [
     id: 'p1',
     category: 'psychological',
     type: 'single',
-    question: 'Šta te najčešće tera da zapališ?',
-    subtitle: 'Budi iskren/a — nema pogrešnog odgovora.',
+    question: 'Šta te najčešće navede da zapališ?',
+    // Male form stored; female override in QuestionScreen (subtitle only)
+    subtitle: 'Budi iskren — nema pogrešnog odgovora.',
     options: [
       { id: 'a', label: 'Stres ili briga', value: 10 },
-      { id: 'b', label: 'Navika uz kafu ili jelo', value: 20 },
+      { id: 'b', label: 'Kafa ili obrok', value: 20 },
       { id: 'c', label: 'Dosada ili pauza', value: 30 },
       { id: 'd', label: 'Društvo i alkohol', value: 40 },
     ],
@@ -166,24 +165,25 @@ export const questions: Question[] = [
     id: 'p2',
     category: 'psychological',
     type: 'single',
-    question: 'Da li si pokušao/la da prestaneš ranije?',
+    // Male form stored; female override in QuestionScreen
+    question: 'Da li si ranije pokušao da prestaneš?',
     options: [
-      { id: 'a', label: 'Nikad nisam ni pokušao/la', value: 0 },
-      { id: 'b', label: 'Jednom, nisam izdržao/la', value: 1 },
+      { id: 'a', label: 'Nikad nisam ni pokušao', value: 0 },
+      { id: 'b', label: 'Jednom, nisam izdržao', value: 1 },
       { id: 'c', label: 'Više puta', value: 2 },
-      { id: 'd', label: 'Da, uspeo/la sam ali sam se vratio/la', value: 3 },
+      { id: 'd', label: 'Jesam, ali sam se vratio', value: 3 },
     ],
   },
   {
     id: 'p3',
     category: 'psychological',
     type: 'single',
-    question: 'Šta te je do sada zaustavljalo?',
+    question: 'Šta te je do sada najčešće zaustavljalo?',
     options: [
       { id: 'a', label: 'Apstinencijalna kriza', value: 1 },
-      { id: 'b', label: 'Stres i pritisak', value: 2 },
-      { id: 'c', label: 'Nisam imao/la podršku', value: 3 },
-      { id: 'd', label: 'Zapravo nisam ni pokušao/la ozbiljno', value: 4 },
+      { id: 'b', label: 'Stres', value: 2 },
+      { id: 'c', label: 'Nisam imao podršku', value: 3 },
+      { id: 'd', label: 'Nisam ozbiljno pokušao', value: 4 },
     ],
   },
   {
@@ -192,10 +192,10 @@ export const questions: Question[] = [
     type: 'single',
     question: 'Kako se osećaš kada pomisliš da prestaneš?',
     options: [
-      { id: 'a', label: 'Spreman/na i motivisan/a', value: 3 },
-      { id: 'b', label: 'Ambivalentan/na — i hoću i ne', value: 2 },
-      { id: 'c', label: 'Malo uplašen/a', value: 1 },
-      { id: 'd', label: 'Nisam siguran/a da mogu', value: 0 },
+      { id: 'a', label: 'Spreman sam', value: 3 },
+      { id: 'b', label: 'I hoću i neću', value: 2 },
+      { id: 'c', label: 'Pomalo sam zabrinut', value: 1 },
+      { id: 'd', label: 'Nisam siguran da mogu', value: 0 },
     ],
   },
 
@@ -208,8 +208,8 @@ export const questions: Question[] = [
     options: [
       { id: 'a', label: 'Danas ili ove nedelje', value: 3 },
       { id: 'b', label: 'U narednom mesecu', value: 2 },
-      { id: 'c', label: 'Jednog dana, kad budem spreman/na', value: 1 },
-      { id: 'd', label: 'Nisam siguran/a', value: 0 },
+      { id: 'c', label: 'Kada budem spreman', value: 1 },
+      { id: 'd', label: 'Nisam siguran', value: 0 },
     ],
   },
   {
@@ -241,6 +241,75 @@ export const questions: Question[] = [
 
 export type SmokingProfile = 'Stresni pušač' | 'Socijalni pušač' | 'Pušač iz navike' | 'Mešoviti profil';
 
+export interface DriverBreakdown {
+  stress: number;    // 0–100
+  habit: number;     // 0–100
+  social: number;    // 0–100
+  nicotine: number;  // 0–100
+  // all four always sum to 100
+}
+
+export function calculateDriverBreakdown(answers: Record<string, string>): DriverBreakdown {
+  let stress = 5, habit = 5, social = 5, nicotine = 5;
+
+  const a = answers;
+
+  // Stress signals
+  if (a['p1'] === 'a') stress += 40;
+  if (a['q3'] === 'a') stress += 10;
+  if (a['h1'] === 'c' || a['h1'] === 'd') stress += 10;
+  if (a['p3'] === 'b') stress += 20;
+  if (a['p4'] === 'c' || a['p4'] === 'd') stress += 10;
+
+  // Habit signals
+  if (a['p1'] === 'b' || a['p1'] === 'c') habit += 35;
+  if (a['q3'] === 'a') habit += 15;
+  if (a['q2'] === 'c' || a['q2'] === 'd') habit += 15;
+  if (a['r3'] === 'b' || a['r3'] === 'c') habit += 10;
+
+  // Social signals
+  if (a['p1'] === 'd') social += 50;
+  if (a['q3'] === 'c') social += 30;
+  if (a['h3'] === 'b' || a['h3'] === 'c') social += 10;
+
+  // Nicotine signals
+  if (a['f1'] === 'a' || a['f1'] === 'b') nicotine += 30;
+  if (a['f2'] === 'a') nicotine += 20;
+  if (a['f3'] === 'a') nicotine += 15;
+  if (a['f4'] === 'a') nicotine += 15;
+  if (a['q1'] === 'c' || a['q1'] === 'd') nicotine += 10;
+
+  const total = stress + habit + social + nicotine;
+  return {
+    stress:   Math.round((stress / total) * 100),
+    habit:    Math.round((habit / total) * 100),
+    social:   Math.round((social / total) * 100),
+    nicotine: Math.round((nicotine / total) * 100),
+  };
+}
+
+export function calculateReadinessScore(answers: Record<string, string>): number {
+  let score = 0;
+
+  // r1: quit timeline
+  const r1Map: Record<string,number> = { a: 30, b: 22, c: 12, d: 5 };
+  score += r1Map[answers['r1']] ?? 0;
+
+  // r2: importance
+  const r2Map: Record<string,number> = { a: 5, b: 15, c: 22, d: 30 };
+  score += r2Map[answers['r2']] ?? 0;
+
+  // p2: prior attempts show intent
+  const p2Map: Record<string,number> = { a: 5, b: 12, c: 20, d: 16 };
+  score += p2Map[answers['p2']] ?? 0;
+
+  // p4: how they feel about quitting
+  const p4Map: Record<string,number> = { a: 20, b: 12, c: 8, d: 3 };
+  score += p4Map[answers['p4']] ?? 0;
+
+  return Math.min(100, score);
+}
+
 export interface QuizResults {
   fagerstromScore: number;
   fagerstromLevel: 'Niska' | 'Umerena' | 'Visoka' | 'Vrlo visoka';
@@ -250,6 +319,8 @@ export interface QuizResults {
   cigarettesPerDay: number;
   cigarettesPerYear: number;
   readinessScore: number; // 0-9
+  driverBreakdown: DriverBreakdown;
+  readinessScore100: number; // 0–100
   answers: Record<string, string>;
 }
 
@@ -297,6 +368,9 @@ export function calculateResults(answers: Record<string, string>, packPrice = 45
     if (opt) readinessScore += opt.value;
   });
 
+  const driverBreakdown = calculateDriverBreakdown(answers);
+  const readinessScore100 = calculateReadinessScore(answers);
+
   return {
     fagerstromScore,
     fagerstromLevel,
@@ -306,6 +380,8 @@ export function calculateResults(answers: Record<string, string>, packPrice = 45
     cigarettesPerDay,
     cigarettesPerYear,
     readinessScore,
+    driverBreakdown,
+    readinessScore100,
     answers,
   };
 }
@@ -314,21 +390,21 @@ export const profileDescriptions: Record<SmokingProfile, { title: string; descri
   'Stresni pušač': {
     title: 'Stresni pušač',
     description: 'Cigareta ti je mehanizam za rasterećenje. Nije slabost — to je naučena reakcija na pritisak koja traje godinama.',
-    strategy: 'Tvoja strategija: zameni ritual, ne samo cigaretu. Box breathing i kratke šetnje daju isti fiziološki efekat za 3–5 minuta.',
+    strategy: 'Zameni ritual, ne samo cigaretu. Box breathing i kratke šetnje daju isti fiziološki efekat za 3–5 minuta.',
   },
   'Socijalni pušač': {
     title: 'Socijalni pušač',
     description: 'Cigareta ti je deo društvenog rituala. Kafana, piće, dobro društvo — sve se oseti nepotpuno bez nje.',
-    strategy: 'Tvoja strategija: identifikuj 2-3 okidača u društvu i pripremi "izlaz" unapred. Nije o volji — o je o pripremi.',
+    strategy: 'Identifikuj 2–3 okidača u društvu i pripremi izlaz unapred. Nije o volji — o je o pripremi.',
   },
   'Pušač iz navike': {
     title: 'Pušač iz navike',
     description: 'Kod tebe je cigareta čisto automatska — uz kafu, posle jela, na pauzi. Mozak je vezao signale bez tvog pristanka.',
-    strategy: 'Tvoja strategija: prekini jedan ritual odjednom. Zameni jutarnju kafu sa cigaretom čajem nedelju dana. Mozak se brzo prilagođava.',
+    strategy: 'Prekini jedan ritual odjednom. Zameni jutarnju cigaretu uz kafu čajem nedelju dana. Mozak se brzo prilagođava.',
   },
   'Mešoviti profil': {
     title: 'Mešoviti profil',
     description: 'Pušiš iz više razloga — stres, navika, društvo. To je čest profil i ne znači da je teže prestati.',
-    strategy: 'Tvoja strategija: trodnevni "mapiranje" — beleži svaku cigaretu i situaciju. Videćeš jasan obrazac za 72h.',
+    strategy: 'Trodnevno mapiranje — beleži svaku cigaretu i situaciju. Videćeš jasan obrazac za 72 sata.',
   },
 };
