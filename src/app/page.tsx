@@ -176,10 +176,10 @@ function IntroScreen({ onStart }: { onStart: () => void }) {
 
           <div className="animate-slide-up delay-100">
             <h1 style={{
-              fontSize: 28, fontWeight: 800, lineHeight: 1.2,
-              letterSpacing: '-0.03em', marginBottom: 10,
+              fontSize: 22, fontWeight: 800, lineHeight: 1.25,
+              letterSpacing: '-0.025em', marginBottom: 10,
             }}>
-              Šta je razlog zbog kog i dalje pališ — čak i kad znaš da ne bi trebalo?
+              Šta je razlog zbog kog i dalje pališ, čak i kad znaš da ne bi trebalo?
             </h1>
             <p style={{ color: 'var(--text-sub)', fontSize: 14, lineHeight: 1.55, marginBottom: 10 }}>
               Za 3 minuta saznaćeš:
@@ -1849,7 +1849,7 @@ export default function Home() {
   const resolvedGender: Gender = gender ?? 'muško';
 
   return (
-    <main style={{ minHeight: '100vh', background: 'var(--bg)' }}>
+    <main style={{ background: 'var(--bg)' }}>
       <div style={{ height: 3, background: 'var(--ember-grad)', position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100 }} />
 
       {stage === 'intro' && <IntroScreen onStart={() => setStage('onboarding')} />}
