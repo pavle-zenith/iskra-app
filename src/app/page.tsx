@@ -1783,7 +1783,7 @@ export default function Home() {
   const [packPrice, setPackPrice] = useState(450);
   const [emailLoading, setEmailLoading] = useState(false);
   const [feedbackIndex, setFeedbackIndex] = useState<1 | 2>(1);
-  const [, setCommitted] = useState(false);
+  const [committed, setCommitted] = useState(false);
 
   const total = questions.length;
 
@@ -1835,7 +1835,7 @@ export default function Home() {
       await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: emailVal, name: nameVal, results }),
+        body: JSON.stringify({ email: emailVal, name: nameVal, results, committed }),
       });
     } catch { /* continue */ }
     setEmailLoading(false);
