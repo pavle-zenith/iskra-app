@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   const resend = new Resend(process.env.RESEND_API_KEY);
   try {
     const body = await req.json();
-    const { email, results, committed } = body;
+    const { email, name, results, committed } = body;
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ error: 'Invalid email' }, { status: 400 });
@@ -21,6 +21,7 @@ export async function POST(req: NextRequest) {
       .from('quiz_submissions')
       .upsert({
         email,
+        name:               name                       ?? null,
         smoking_profile:    results?.smokingProfile    ?? null,
         fagerstrom_score:   results?.fagerstromScore   ?? null,
         fagerstrom_level:   results?.fagerstromLevel   ?? null,
