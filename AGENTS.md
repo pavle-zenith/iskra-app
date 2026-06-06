@@ -21,19 +21,28 @@ This file mirrors CLAUDE.md for agents that read AGENTS.md instead of CLAUDE.md.
 - `src/app/globals.css` — full design system (tokens, components, animations)
 - `src/app/layout.tsx` — metadata + root layout
 
-## Active TODOs (priority order)
-- **[P0]** Add `'feedback'` and `'loading'` stages to quiz flow — full spec in CLAUDE.md
-- **[P0]** Fix financial calc to use Q1 answer (map option IDs → cigarette counts: a=3, b=8, c=15, d=25)
-- **[P0]** Commitment modal mid-loading screen — stores `committed: boolean` in state
-- Wire Resend for transactional email in `/api/subscribe`
-- Wire Supabase (or Airtable) for waitlist persistence
-- Add analytics (no tracking currently)
+## Implemented (all done)
+- Gender + pack price onboarding before quiz
+- FeedbackScreen (ember gradient) after Q3 and Q7
+- LoadingScreen: sequential bars, rotating facts, commitment modal
+- `committed` state tracked and sent to API
+- Financial calc uses Q1 answer (a=3, b=8, c=15, d=25 cigs) + onboarding pack price
+- PromoScreen (Iskra app teaser + animated mockup iframe)
+- ResultsScreen: 6 result cards, Iskra teaser card, waitlist card, FAQ accordion, socials, share
+- Gender-aware copy throughout (isMale = gender !== 'žensko')
+- Supabase integration: `quiz_submissions` table, upsert on email, uses SERVICE_ROLE_KEY
+- Resend integration: confirmation email sent on quiz completion, includes profile + Fagerstrom + annual cost
+- Copy rewrite: human tone, proper M/F Serbian grammar variants
 
-## New quiz flow
+## Active TODOs
+- Add analytics/tracking (none currently)
+- Email confirmation copy is male-only ("Dobio si", "završio") — gender not passed to API yet
+- Consider passing `gender` in the subscribe POST body so email footer can be gender-aware
+
+## Current quiz flow
 ```
-intro → quiz → [feedback after Q3] → quiz → [feedback after Q7] → quiz → loading (4–5s, named bars, commitment modal) → partial → email → results (+ Iskra teaser sections)
+intro → onboarding (gender + pack price) → quiz → [feedback Q3] → quiz → [feedback Q7] → quiz → loading → partial → email → promo → results
 ```
-See CLAUDE.md "Quiz flow" section for full copy, timing, and component spec.
 
 ## Cowork context
 This repo is also open in Cowork (Claude desktop). Cowork handles design, context docs, and planning. Claude Code handles implementation. Coordinate via CLAUDE.md — keep it updated when architecture changes.

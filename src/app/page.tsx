@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { questions, calculateResults, profileDescriptions, type QuizResults } from '@/lib/quiz-data';
+import posthog from 'posthog-js';
 
-type Stage = 'intro' | 'onboarding' | 'quiz' | 'feedback' | 'loading' | 'partial' | 'email' | 'promo' | 'results';
+type Stage = 'intro' | 'onboarding' | 'quiz' | 'feedback' | 'health' | 'loading' | 'partial' | 'email' | 'promo' | 'results';
 type Gender = 'muško' | 'žensko' | 'drugo';
 
 // ── Inline SVG icon primitives (24×24, stroke-based, no emoji) ────────────────
@@ -53,6 +54,12 @@ const CATEGORY_ICONS: Record<string, IcoComponent> = {
   health:        IcoHeart,
   psychological: IcoMsg,
   readiness:     IcoFlame,
+};
+
+// ─── SOCIAL PROOF CONFIG ──────────────────────────────────────────────────────
+const SOCIAL_PROOF = {
+  completionCount: '2.341',   // update this number to increase social proof
+  waitlistLine: 'Hiljade pušača već čeka pristup Iskri.',
 };
 
 // ── Reusable icon chip ────────────────────────────────────────────────────────
@@ -216,6 +223,16 @@ function IntroScreen({ onStart }: { onStart: () => void }) {
             ))}
           </div>
 
+          <div className="animate-slide-up delay-200" style={{ marginBottom: 16, textAlign: 'center' }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              fontSize: 13, color: 'var(--text-sub)', fontWeight: 600,
+            }}>
+              <IcoCheck size={12} stroke="#2D8A4E" sw={2.5} />
+              {SOCIAL_PROOF.completionCount}+ ljudi je već uradilo procenu
+            </span>
+          </div>
+
           <div className="animate-slide-up delay-300" style={{
             background: 'var(--card)', borderRadius: 18, padding: '16px 18px',
             border: '1px solid var(--border)', marginBottom: 20, textAlign: 'left',
@@ -232,7 +249,7 @@ function IntroScreen({ onStart }: { onStart: () => void }) {
         </div>
 
         <div className="animate-slide-up delay-400" style={{ paddingBottom: 28 }}>
-          <button className="btn-primary" onClick={onStart}>
+          <button className="btn-primary" onClick={() => { posthog.capture('quiz_intro_cta_clicked'); onStart(); }}>
             Počni →
           </button>
           <p style={{ fontSize: 12, color: 'var(--text-sub)', marginTop: 10, textAlign: 'center' }}>
@@ -425,7 +442,11 @@ function OnboardingScreen({ onComplete }: {
       {/* CTA — only shown on step 2 */}
       {step === 2 && (
         <div style={{ paddingBottom: 32, paddingTop: 16 }}>
-          <button className="btn-primary" onClick={() => onComplete(gender!, packPrice)}>
+          <button className="btn-primary" onClick={() => {
+            posthog.identify(posthog.get_distinct_id(), { gender: gender!, pack_price: packPrice });
+            posthog.capture('quiz_started', { gender: gender!, pack_price: packPrice });
+            onComplete(gender!, packPrice);
+          }}>
             Počni quiz →
           </button>
         </div>
@@ -807,6 +828,7 @@ function LoadingScreen({ results, onComplete, gender }: {
 
   const handleChoice = (choice: boolean) => {
     committedRef.current = choice;
+    posthog.capture(choice ? 'quiz_commitment_yes' : 'quiz_commitment_no');
     setShowModal(false);
     setModalAnswered(true);
   };
@@ -933,6 +955,32 @@ function LoadingScreen({ results, onComplete, gender }: {
   );
 }
 
+// ─── PERSONALIZED INSIGHT ────────────────────────────────────────────────────
+function getPersonalizedInsight(breakdown: { stress: number; habit: number; social: number; nicotine: number }, fagerstromScore: number): string {
+  const entries = [
+    { key: 'stress',   pct: breakdown.stress },
+    { key: 'habit',    pct: breakdown.habit },
+    { key: 'social',   pct: breakdown.social },
+    { key: 'nicotine', pct: breakdown.nicotine },
+  ].sort((a, b) => b.pct - a.pct);
+  const dominant = entries[0].key;
+  const dominantPct = entries[0].pct;
+
+  if (dominant === 'stress' && dominantPct >= 40) {
+    return 'Većina pušača misli da ih za cigaretu vraća nikotin. Kod tebe odgovori jasno ukazuju na stres i pritisak kao glavni pokretač — ne fizička zavisnost.';
+  }
+  if (dominant === 'habit' && dominantPct >= 35) {
+    return 'Kod tebe cigareta deluje više kao automatska rutina nego kao svesna odluka. To je zapravo dobra vest — navike mogu da se menjaju brže nego što misliš.';
+  }
+  if (dominant === 'social' && dominantPct >= 35) {
+    return 'Kod tebe su društvene situacije veći okidač od same potrebe za nikotinom. Strategija koja ignoriše okruženje i fokusira se samo na volju — neće funkcionisati.';
+  }
+  if (fagerstromScore >= 5) {
+    return 'Kod tebe fizička zavisnost igra veću ulogu nego kod prosečnog pušača. To ne znači da je teže — to znači da plan mora biti drugačiji od standardnog pristupa.';
+  }
+  return 'Tvoj obrazac pušenja je specifičan za tebe. Kombinacija okidača koje smo identifikovali retko se viđa u istom obliku kod dva pušača.';
+}
+
 // ─── PARTIAL REVEAL ──────────────────────────────────────────────────────────
 function PartialReveal({ results, onContinue, gender }: { results: QuizResults; onContinue: () => void; gender: Gender }) {
   const levelColors: Record<string, string> = {
@@ -998,6 +1046,20 @@ function PartialReveal({ results, onContinue, gender }: { results: QuizResults; 
         </div>
       </div>
 
+      {/* Reciprocity insight */}
+      <div className="animate-slide-up delay-300" style={{
+        background: 'var(--faint)', borderRadius: 'var(--r-card)',
+        padding: '16px 18px', marginBottom: 20,
+        borderLeft: '3px solid var(--ember)',
+      }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--ember)', marginBottom: 8 }}>
+          JEDNA STVAR KOJU VREDI DA ZNAŠ
+        </div>
+        <p style={{ fontSize: 14, color: 'var(--body-text)', lineHeight: 1.7, fontWeight: 500 }}>
+          {getPersonalizedInsight(partialBd, results.fagerstromScore)}
+        </p>
+      </div>
+
       {/* Locked card */}
       <div className="animate-slide-up delay-300" style={{
         background: 'var(--card)', borderRadius: 20, padding: 24,
@@ -1052,6 +1114,7 @@ function EmailGate({ onSubmit, loading, prefillName, gender }: {
   const [email, setEmail] = useState('');
   const [name, setName]   = useState(prefillName);
   const isValid = name.trim().length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const isMale = gender !== 'žensko';
 
   const handleSubmit = () => isValid && !loading && onSubmit(email, name.trim());
 
@@ -1066,11 +1129,13 @@ function EmailGate({ onSubmit, loading, prefillName, gender }: {
         }}>
           <IcoMail size={36} stroke="var(--ember)" sw={1.7} />
         </div>
-        <h2 className="animate-slide-up" style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.025em', marginBottom: 12 }}>
-          Tvoj kompletan izveštaj je spreman.
+        <h2 className="animate-slide-up" style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1.25, marginBottom: 12 }}>
+          {isMale ? 'Napravio si nešto što većina pušača nikada ne uradi.' : 'Napravila si nešto što većina pušača nikada ne uradi.'}
         </h2>
         <p className="animate-slide-up delay-100" style={{ color: 'var(--text-sub)', fontSize: 15, lineHeight: 1.6, marginBottom: 16 }}>
-          Otključaj preostale rezultate i sačuvaj kopiju za kasnije.
+          {isMale
+            ? 'Odvojio si nekoliko minuta da vidiš gde zaista stojiš. Ostavi email i otključaj kompletan izveštaj.'
+            : 'Odvojila si nekoliko minuta da vidiš gde zaista stojiš. Ostavi email i otključaj kompletan izveštaj.'}
         </p>
       </div>
 
@@ -1104,6 +1169,9 @@ function EmailGate({ onSubmit, loading, prefillName, gender }: {
       <div className="animate-fade-in delay-400" style={{ textAlign: 'center' }}>
         <p style={{ fontSize: 12, color: 'var(--text-sub)', lineHeight: 1.7 }}>
           Nikad spam. Samo tvoji rezultati i obaveštenje kada Iskra bude dostupna.
+        </p>
+        <p style={{ fontSize: 13, color: 'var(--text-sub)', marginTop: 8, fontWeight: 600, textAlign: 'center' }}>
+          {SOCIAL_PROOF.waitlistLine}
         </p>
       </div>
 
@@ -1756,7 +1824,9 @@ function ResultsScreen({ results, email, name, gender }: { results: QuizResults;
             const text = isMale
               ? 'Upravo sam uradio Iskra kviz o pušenju. Iznenađujuće tačno. Probaj: quiz.iskraclub.com'
               : 'Upravo sam uradila Iskra kviz o pušenju. Iznenađujuće tačno. Probaj: quiz.iskraclub.com';
-            if (navigator.share) {
+            const canShare = 'share' in navigator;
+            posthog.capture('quiz_results_shared', { method: canShare ? 'native_share' : 'clipboard', smoking_profile: results.smokingProfile });
+            if (canShare && navigator.share) {
               navigator.share({ text, url: window.location.href });
             } else {
               navigator.clipboard.writeText(text).then(() => alert('Link kopiran!'));
@@ -1765,6 +1835,39 @@ function ResultsScreen({ results, email, name, gender }: { results: QuizResults;
         >
           <IcoShare size={16} stroke="white" sw={2} />
           Podeli rezultate
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── HEALTH REFLECTION ───────────────────────────────────────────────────────
+function HealthReflectionScreen({ onContinue }: { onContinue: () => void }) {
+  return (
+    <div style={{
+      height: '100dvh', display: 'flex', flexDirection: 'column',
+      background: 'var(--bg)',
+    }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 28px', textAlign: 'center' }}>
+        <div style={{
+          width: 64, height: 64, borderRadius: 18, background: 'var(--ember-tint)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24,
+        }}>
+          <IcoHeart size={30} stroke="var(--ember)" sw={1.8} />
+        </div>
+        <h2 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1.25, marginBottom: 14 }}>
+          Pušenje nije samo navika.
+        </h2>
+        <p style={{ fontSize: 15, color: 'var(--body-text)', lineHeight: 1.7, marginBottom: 8 }}>
+          Telo često primeti posledice pre nas.
+        </p>
+        <p style={{ fontSize: 14, color: 'var(--text-sub)', lineHeight: 1.7 }}>
+          Mnogi pušači primete promene godinama pre nego što odluče da prestanu. Zato sada gledamo psihološki deo priče.
+        </p>
+      </div>
+      <div style={{ padding: '0 28px 32px', flexShrink: 0 }}>
+        <button className="btn-primary" onClick={onContinue}>
+          Nastavi →
         </button>
       </div>
     </div>
@@ -1797,17 +1900,40 @@ export default function Home() {
     const newAnswers = { ...answers, [qId]: optionId };
     setAnswers(newAnswers);
 
+    const question = questions[questionIndex];
+    const selectedOption = question?.options?.find(o => o.id === optionId);
+    posthog.capture('quiz_question_answered', {
+      question_id: qId,
+      question_index: questionIndex + 1,
+      category: question?.category,
+      answer_value: selectedOption?.value ?? optionId,
+    });
+
+    const q1CigsMap: Record<string, number> = { a: 3, b: 8, c: 15, d: 25 };
+
     if (questionIndex === 2) {
       setFeedbackIndex(1);
+      posthog.capture('quiz_feedback_1_seen', { cigs_per_day: q1CigsMap[newAnswers['q1']] ?? 15 });
       setTimeout(() => setStage('feedback'), 200);
     } else if (questionIndex === 6) {
       setFeedbackIndex(2);
+      let fScore = 0;
+      ['f1', 'f2', 'f3', 'f4'].forEach(key => {
+        const q = questions.find(q => q.id === key);
+        const opt = q?.options?.find(o => o.id === newAnswers[key]);
+        if (opt) fScore += opt.value;
+      });
+      const fLevel = fScore <= 2 ? 'Niska' : fScore <= 4 ? 'Umerena' : 'Visoka';
+      posthog.capture('quiz_feedback_2_seen', { fagerstrom_score: fScore, fagerstrom_level: fLevel });
       setTimeout(() => setStage('feedback'), 200);
+    } else if (questionIndex === 9) {
+      setTimeout(() => setStage('health'), 200);
     } else if (questionIndex < total - 1) {
       setTimeout(() => setQuestionIndex(i => i + 1), 200);
     } else {
       const calc = calculateResults(newAnswers, packPrice);
       setResults(calc);
+      posthog.capture('quiz_loading_started');
       setTimeout(() => setStage('loading'), 200);
     }
   }, [answers, questionIndex, total, packPrice]);
@@ -1822,6 +1948,11 @@ export default function Home() {
     setQuestionIndex(i => i + 1);
   }, []);
 
+  const handleContinueHealth = useCallback(() => {
+    setStage('quiz');
+    setQuestionIndex(i => i + 1);
+  }, []);
+
   const handleLoadingComplete = useCallback((didCommit: boolean) => {
     setCommitted(didCommit);
     setStage('partial');
@@ -1831,11 +1962,24 @@ export default function Home() {
     setEmail(emailVal);
     setName(nameVal);
     setEmailLoading(true);
+
+    posthog.identify(emailVal, { name: nameVal, email: emailVal, gender: resolvedGender });
+    posthog.capture('quiz_email_submitted', {
+      smoking_profile: results?.smokingProfile,
+      fagerstrom_score: results?.fagerstromScore,
+      fagerstrom_level: results?.fagerstromLevel,
+      readiness_score: results?.readinessScore100,
+      committed,
+      gender: resolvedGender,
+    });
+
+    const distinctId = posthog.get_distinct_id();
+
     try {
       await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: emailVal, name: nameVal, results, committed }),
+        body: JSON.stringify({ email: emailVal, name: nameVal, results, committed, gender: resolvedGender, distinct_id: distinctId }),
       });
     } catch { /* continue */ }
     setEmailLoading(false);
@@ -1845,6 +1989,28 @@ export default function Home() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [stage, questionIndex]);
+
+  useEffect(() => {
+    if (stage === 'partial' && results) {
+      posthog.capture('quiz_partial_revealed', {
+        smoking_profile: results.smokingProfile,
+        fagerstrom_level: results.fagerstromLevel,
+        readiness_score: results.readinessScore100 ?? 0,
+      });
+    } else if (stage === 'email') {
+      posthog.capture('quiz_email_gate_seen');
+    } else if (stage === 'promo') {
+      posthog.capture('quiz_promo_seen');
+    } else if (stage === 'results' && results) {
+      posthog.capture('quiz_results_seen', {
+        smoking_profile: results.smokingProfile,
+        fagerstrom_level: results.fagerstromLevel,
+        annual_cost_rsd: results.annualCostRSD,
+        readiness_score: results.readinessScore100 ?? 0,
+        committed,
+      });
+    }
+  }, [stage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const resolvedGender: Gender = gender ?? 'muško';
 
@@ -1872,6 +2038,7 @@ export default function Home() {
           gender={resolvedGender}
         />
       )}
+      {stage === 'health' && <HealthReflectionScreen onContinue={handleContinueHealth} />}
       {stage === 'loading' && results && (
         <LoadingScreen
           results={results}

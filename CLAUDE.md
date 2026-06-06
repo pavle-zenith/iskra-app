@@ -57,12 +57,14 @@ All styling uses CSS custom properties. Key tokens:
 - `.animate-slide-up`, `.animate-slide-in`, `.animate-fade-in`, `.animate-scale-in`
 - Delays: `.delay-100` through `.delay-500` (0.08s increments)
 
-## Quiz flow (updated — richer engagement pattern)
+## Quiz flow (fully implemented)
 ```
-intro → quiz (15 questions, with 2 mid-quiz feedback screens) → loading screen → partial (shows profile + Fagerstrom, locks rest) → email gate → results (full unlock + Iskra app teaser)
+intro → onboarding (gender + pack price) → quiz → [feedback after Q3] → quiz → [feedback after Q7] → quiz → loading (sequential bars + commitment modal) → partial → email → promo (Iskra app teaser) → results
 ```
 
-Stage type: `'intro' | 'quiz' | 'feedback' | 'loading' | 'partial' | 'email' | 'results'`
+Stage type: `'intro' | 'onboarding' | 'quiz' | 'feedback' | 'loading' | 'partial' | 'email' | 'promo' | 'results'`
+
+Note: `promo` is the PromoScreen (Iskra app teaser + mockup iframe). Results is the full report.
 
 ### Mid-quiz feedback screens
 Two interstitial feedback screens appear during the quiz on an ember gradient background (`var(--ember-grad)`) — white text on orange, contrasting with the white question cards. They are NOT blockers — they feel like rewards. Trigger them by question index, not category.
@@ -134,14 +136,22 @@ Currently logs to console only. TODOs in the file:
 - `RESEND_API_KEY` env var expected when Resend is added
 
 ## Known gaps / TODOs
-- **[P0] Financial calculation** uses hardcoded 15 cigs/day — must use Q1 answer value (q1 option values: a=3, b=8, c=15, d=25 cigarettes — map these in calculateResults)
-- **[P0] New stages to implement**: `'feedback'` and `'loading'` stages — see "Quiz flow" section above for full spec
-- **[P0] Commitment modal** — mid-loading screen popup, store result in state as `committed: boolean`
-- Email provider not integrated (Resend recommended)
-- Waitlist DB not integrated (Supabase recommended)
+- **[DONE] Feedback screens** — implemented as FeedbackScreen, ember gradient bg, triggers at Q3 and Q7
+- **[DONE] Loading screen** — sequential bars, rotating facts, commitment modal, `committed` stored in state
+- **[DONE] Financial calc** — now uses Q1 answer map (a=3, b=8, c=15, d=25) + onboarding pack price
+- **[DONE] Onboarding** — gender + pack price collected before quiz starts
+- **[DONE] Gender variants** — all gendered copy uses `isMale = gender !== 'žensko'` conditional
+- **[DONE] Iskra app teaser** — in PromoScreen (animated mockup iframe) and ResultsScreen card
+- **[DONE] Waitlist card** — ember-gradient card at bottom of ResultsScreen
+- **[DONE] FAQ** — FaqSection accordion in ResultsScreen
+- **[DONE] Share** — M/F gendered share text, uses `navigator.share` with clipboard fallback
+- **[DONE] Social links** — TikTok and Instagram links in ResultsScreen
+- **[DONE] Supabase** — `quiz_submissions` table, upsert on email conflict, uses `SUPABASE_SERVICE_ROLE_KEY`
+- **[DONE] Resend** — confirmation email sent on submit; `committed` field included in DB row
+- **[DONE] Copy rewrite** — human tone, M/F Serbian grammar variants applied throughout
 - No analytics/tracking yet
-- Share text references `quiz.iskraclub.rs` (hardcoded URL)
-- Fagerstrom max is scored as /6 but actual Fagerström scale is 0–10 (simplified version used here)
+- Fagerstrom max is scored as /6 (simplified — actual clinical scale is 0–10)
+- Email confirmation uses male-only footer copy ("Dobio si", "završio") — needs gender-aware version once gender is passed to API
 
 ## Conventions
 - All inline styles use CSS variables (`var(--ember)`, etc.) — do not introduce raw hex values

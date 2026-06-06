@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
+import { getPostHogClient } from '@/lib/posthog-server';
 
 export async function POST(req: NextRequest) {
   const supabase = createClient(
@@ -8,9 +9,11 @@ export async function POST(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
   const resend = new Resend(process.env.RESEND_API_KEY);
+  const posthog = getPostHogClient();
   try {
     const body = await req.json();
-    const { email, name, results, committed } = body;
+    const { email, name, results, committed, gender, distinct_id } = body;
+    const distinctId = distinct_id || email;
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ error: 'Invalid email' }, { status: 400 });
@@ -31,14 +34,45 @@ export async function POST(req: NextRequest) {
         readiness_score:    results?.readinessScore    ?? null,
         committed:          committed                  ?? null,
         answers:            results?.answers           ?? null,
+        gender:             gender                     ?? null,
       }, { onConflict: 'email' });
 
     if (dbError) {
       console.error('Supabase error:', dbError);
       // Don't block — still send email
+    } else {
+      posthog.identify({
+        distinctId,
+        properties: { email, name, gender },
+      });
+      posthog.capture({
+        distinctId,
+        event: 'waitlist_signup_completed',
+        properties: {
+          email,
+          name,
+          gender,
+          smoking_profile: results?.smokingProfile ?? null,
+          fagerstrom_score: results?.fagerstromScore ?? null,
+          fagerstrom_level: results?.fagerstromLevel ?? null,
+          annual_cost_rsd: results?.annualCostRSD ?? null,
+          readiness_score: results?.readinessScore ?? null,
+          committed: committed ?? null,
+        },
+      });
     }
 
     // 2. Send confirmation email via Resend
+    const isMale = gender !== 'žensko';
+
+    const footerLine = isMale
+      ? 'Dobio si ovaj email jer si završio Iskra procenu na quiz.iskraclub.com.'
+      : 'Dobila si ovaj email jer si završila Iskra procenu na quiz.iskraclub.com.';
+
+    const waitlistLine = isMale
+      ? 'Bićeš prvi koji dobija pristup i po početnoj ceni koja neće biti dostupna posle lansiranja.'
+      : 'Bićeš prva koja dobija pristup i po početnoj ceni koja neće biti dostupna posle lansiranja.';
+
     const profile = results?.smokingProfile ?? 'pušač';
     const fagerstromText = results?.fagerstromLevel
       ? `${results.fagerstromScore}/6 — ${results.fagerstromLevel} zavisnost`
@@ -101,7 +135,7 @@ export async function POST(req: NextRequest) {
         Iskra dolazi uskoro
       </h2>
       <p style="color:rgba(255,255,255,0.7);font-size:14px;line-height:1.6;margin:0 0 20px;">
-        Na Early Access listi si. Bićeš prvi koji dobija pristup i po početnoj ceni koja neće biti dostupna posle lansiranja.
+        Na Early Access listi si. ${waitlistLine}
       </p>
       <div style="background:rgba(255,255,255,0.12);border-radius:10px;padding:10px 16px;display:inline-block;color:white;font-weight:700;font-size:13px;">
         Na listi si — čekaj obaveštenje
@@ -109,7 +143,7 @@ export async function POST(req: NextRequest) {
     </div>
 
     <p style="font-size:12px;color:#BBBBBB;text-align:center;line-height:1.7;margin:0;">
-      Dobio si ovaj email jer si završio Iskra quiz na quiz.iskraclub.com.<br>
+      ${footerLine}<br>
       Nećemo te spamovati — samo obaveštenje kad app izađe.
     </p>
 
