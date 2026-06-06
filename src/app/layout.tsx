@@ -18,6 +18,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="sr">
+      <head>
+        <link rel="preload" href="/iskra-animated-mockup.html" as="document" />
+        <link rel="preload" href="/iskra-logo.png" as="image" />
+        <link rel="preload" href="/iskra-flame-ember.png" as="image" />
+        <link rel="preload" href="/iskra-man.png" as="image" />
+        <link rel="preload" href="/iskra-woman.png" as="image" />
+        <link rel="preload" href="/canyon-bg.png" as="image" />
+      </head>
       <body style={{ minHeight: '100vh', margin: 0 }}>{children}</body>
     </html>
   );

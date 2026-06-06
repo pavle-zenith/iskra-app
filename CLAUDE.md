@@ -1,23 +1,39 @@
 # Iskra App — Claude Code Context
 
 ## What this is
-A Next.js 14 (App Router) quiz app for **Iskra Club**, a smoking cessation product targeting Serbian-speaking markets. The quiz is a lead-gen and waitlist tool — users complete it, gate their full results behind an email, and get added to the Iskra Club early access list.
+A Next.js 14 (App Router) quiz app for **Iskra Club**, a smoking cessation product targeting Serbian-speaking markets. The quiz is a lead-gen and waitlist tool — users complete it, gate their full results behind an email, and get added to the Iskra Club early access list. Live at **quiz.iskraclub.com**.
 
 ## Stack
 - **Framework**: Next.js 14 (App Router, `src/` directory)
 - **Language**: TypeScript
 - **Styling**: Custom CSS variables in `globals.css` + Tailwind (utility classes available but used sparingly)
 - **Font**: Manrope (Google Fonts, weights 300–800)
-- **Deployment**: Vercel
+- **Deployment**: Vercel (project: `iskra-app`, team: `pavle-zenith-s-projects`)
+- **Database**: Supabase — `quiz_submissions` table (project: `aaknvhlirztdglxsnbho`)
+- **Email**: Resend — sends confirmation on submit from `iskra@iskraclub.com`
+- **Analytics**: PostHog (project 457365, org: ZENITH DIGITAL) — client + server side
 
 ## Key files
 | File | Purpose |
 |------|---------|
-| `src/app/page.tsx` | Full quiz UI — all stages in one file (Intro, Questions, Partial reveal, Email gate, Results) |
-| `src/lib/quiz-data.ts` | All 15 questions, scoring logic, profile descriptions |
-| `src/app/api/subscribe/route.ts` | Email capture endpoint (currently logs to console — email provider not wired yet) |
+| `src/app/page.tsx` | Full quiz UI — all stages in one component file |
+| `src/lib/quiz-data.ts` | All 15 questions, scoring logic, profile descriptions, `calculateDriverBreakdown`, `calculateReadinessScore` |
+| `src/app/api/subscribe/route.ts` | Email capture — writes to Supabase, sends Resend email, fires PostHog server-side event |
+| `src/lib/posthog-server.ts` | PostHog Node client for server-side capture |
+| `instrumentation-client.ts` | PostHog browser SDK init (via `/ingest` proxy) |
 | `src/app/globals.css` | Design system: CSS variables, component classes, animations |
-| `src/app/layout.tsx` | Root layout, metadata, OG tags |
+| `src/app/layout.tsx` | Root layout, metadata, OG tags, `<link rel="preload">` for all images + mockup HTML |
+
+## Environment variables (Vercel + .env.local)
+```
+SUPABASE_URL
+SUPABASE_SERVICE_ROLE_KEY        # use this, not anon key — bypasses RLS
+SUPABASE_ANON_KEY
+RESEND_API_KEY
+RESEND_FROM_EMAIL=iskra@iskraclub.com
+NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN
+NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
+```
 
 ## Design system (globals.css)
 All styling uses CSS custom properties. Key tokens:
@@ -59,102 +75,124 @@ All styling uses CSS custom properties. Key tokens:
 
 ## Quiz flow (fully implemented)
 ```
-intro → onboarding (gender + pack price) → quiz → [feedback after Q3] → quiz → [feedback after Q7] → quiz → loading (sequential bars + commitment modal) → partial → email → promo (Iskra app teaser) → results
+intro → onboarding (gender + pack price) → quiz → [feedback after Q3] → quiz → [feedback after Q7] → quiz → [health reflection after Q10] → quiz → loading (sequential bars + commitment modal) → partial → email → promo (Iskra app teaser) → results
 ```
 
-Stage type: `'intro' | 'onboarding' | 'quiz' | 'feedback' | 'loading' | 'partial' | 'email' | 'promo' | 'results'`
+Stage type: `'intro' | 'onboarding' | 'quiz' | 'feedback' | 'health' | 'loading' | 'partial' | 'email' | 'promo' | 'results'`
 
-Note: `promo` is the PromoScreen (Iskra app teaser + mockup iframe). Results is the full report.
+**Fixed-height stages** (no scroll): `onboarding`, `quiz`, `feedback`, `health`, `loading` — `<main>` gets `height: 100dvh; overflow: hidden` on these. The intro uses `minHeight: 100dvh`. Scrollable stages: `partial`, `email`, `promo`, `results`.
+
+### IntroScreen
+- White base + canyon texture overlay (`opacity: 0.06, mixBlendMode: 'luminosity', saturate(0)`)
+- Logo: `iskra-logo.png` in 52×52 square card (`objectFit: 'cover'`, `overflow: hidden`)
+- Short paragraph instead of bullet list
+- Social proof: full-width option-card-style pill with green verified checkmark, count auto-increments by 6–7 after random 2–6s delay
+- `SOCIAL_PROOF` config object — update `completionCount` to change the number (stored as string with dot separator e.g. `'2.341'`)
+- Nav wordmark: **ISKRA** (all caps) in all nav bars throughout the quiz
+
+### OnboardingScreen (2 steps)
+- Step 1: Gender — two large image cards (`iskra-man.png` / `iskra-woman.png`), advances on tap
+- Step 2: Pack price — stepper counter + quick-select chips (300/400/450/500/600 RSD)
+- On complete: fires `posthog.identify` + `quiz_started` event
 
 ### Mid-quiz feedback screens
-Two interstitial feedback screens appear during the quiz on an ember gradient background (`var(--ember-grad)`) — white text on orange, contrasting with the white question cards. They are NOT blockers — they feel like rewards. Trigger them by question index, not category.
+Ember gradient bg with canyon texture — white text on orange. Not blockers, feel like rewards.
 
-**Feedback 1** — after Q3 (pattern block complete):
-- Eyebrow: "TVOJ OBRAZAC"
-- Show cigarettes/year stat calculated from their Q1 answer
-- One sharp fact, e.g. "Jutarnji pušači imaju duplo veću hemijsku zavisnost od večernjih."
-- CTA: "Nastavi →"
+**Feedback 1** (after Q3 — pattern block): cigarettes/year stat from Q1 answer, sharp fact about morning smokers.
 
-**Feedback 2** — after Q7 (Fagerstrom block complete):
-- Eyebrow: "ZAVISNOST OD NIKOTINA"
-- Reveal partial Fagerstrom tier (Niska / Umerena / Visoka) with one-line clinical note
-- Tease: "Sledeći blok otkriva psihološku stranu — zašto te cigareta drži, ne samo hemija."
-- CTA: "Nastavi →"
+**Feedback 2** (after Q7 — Fagerstrom block): partial Fagerstrom tier reveal (Niska/Umerena/Visoka) with clinical note.
 
-### Loading screen (after Q15, before partial reveal)
-Inspired by Liven's "Creating your Neurobalance Protocol" pattern. Key elements:
-- Personalised headline using their answers: **"Kreiramo tvoj plan prestanka"** with a subline using profile data e.g. "za [Stresnog pušača] · [X] cigareta dnevno"
-- 3–4 named progress bars that fill sequentially (not simultaneously):
-  1. "Obrazac pušenja" → completes instantly ✓
-  2. "Fagerstrom analiza" → fills to 100% ✓  
-  3. "Psihološki profil" → fills to 100% ✓
-  4. "Personalizovana strategija" → fills last
-- Below the bars: rotating quick facts (swap every ~2s) instead of testimonials:
-  - "Pušači u proseku pokušaju 8–10 puta pre nego što uspešno prestanu."
-  - "Prva 3 dana su najteža — nikotin napušta telo za 72h."
-  - "Personalizovani planovi povećavaju šanse za uspeh za 3×."
-  - "Iskra prepoznaje tvoj tip i prilagođava strategiju automatski."
-- **Mid-load commitment modal** — appears when bar 3 completes (~2.5s in):
-  - Modal over blur: "Jesi li spreman/na da ozbiljno kreneš?"
-  - Two buttons: **"Da, spreman/na sam"** / "Još razmišljam"
-  - Both buttons continue — this is not a blocker, it's a micro-commitment trigger (Cialdini principle). Store the answer in state for potential use in results copy.
-- Total loading duration: ~4–5 seconds
+**Health reflection** (after Q10): white bg, IcoHeart icon, transitions to psychological questions.
 
-### Results screen (after email gate)
-Four result cards (same as before), then:
+### LoadingScreen (after Q15)
+- Sequential progress bars (4 total, fill one at a time)
+- Rotating facts every 2.5s
+- Mid-load commitment modal (blur overlay) when bar 3 completes — "Da, spreman/na sam" vs "Još nisam siguran/na"
+- Both choices continue (Cialdini micro-commitment). `committed` boolean stored in state, sent to Supabase + PostHog.
 
-**Iskra app teaser — section woven into results (not bolted at end):**
+### PartialReveal
+- Driver breakdown chart (animated horizontal bars, sorted by %)
+- Fagerstrom score card
+- Cigarettes/year stat
+- Personalized insight (rules engine: stress≥40%, habit≥35%, social≥35%, fagerstrom≥5, fallback)
+- Locked card (blurred) with CTA to unlock via email
 
-*After the quit date card:*
-- Section titled "Šta Iskra radi za tvoj profil" 
-- 3 feature pills with lock icons: "Dnevni check-in" · "Trigger tracker" · "Quit coach AI"
-- One sentence: "Iskra prepoznaje [SmokingProfile] i prilagođava program svakog dana."
-- Badge: "Dolazi uskoro 🔥"
+### EmailGate
+- Gender-aware headline (M/F Serbian grammar)
+- Name + email fields
+- Social proof line from `SOCIAL_PROOF` config
 
-*Bottom of page (after share button):*
-- Ember-background waitlist confirmation card
-- "Na listi si. Bićeš prvi/a koji dobija pristup."
+### PromoScreen ("Future You")
+- Animated mockup iframe (`/iskra-animated-mockup.html`) — preloaded via `<link rel="preload" as="document">`
+- iframe `onLoad` injects CSS to hide `#ui`/`#hint`, applies ember gradient + canyon texture to body
+- Feature cards, stats strip, social proof block, CTA to results
 
-## Quiz content (Serbian)
-All copy is in Serbian (Latin script). Categories:
-- `pattern` — smoking pattern (3 questions)
-- `fagerstrom` — Fagerström nicotine dependence test (4 questions, clinically validated)
-- `health` — health symptoms (3 questions)
-- `psychological` — psychological profile (4 questions)
-- `readiness` — quit readiness (3 questions... wait, only r1–r3 = 3 questions but q1+q2 pattern + f1–f4 fagerstrom + h1–h3 health + p1–p4 psychological + r1–r3 readiness = 3+4+3+4+3 = 17 total IDs, displayed as 15)
+### ResultsScreen
+7 cards in order:
+1. Driver Breakdown (animated bars)
+2. Fagerstrom score
+3. Financial cost (annual + 5-year, equivalents)
+4. Readiness Score (0–100, color-coded)
+5. Smoking Profile + strategy
+6. Recommended quit date
+7. Iskra app teaser (feature list with lock icons)
+
+Then: ember waitlist confirmation card → FAQ accordion → social links (TikTok: `@iskraclub`, Instagram: `@iskraclub_`) → share button (gendered copy, `navigator.share` with clipboard fallback)
 
 ## Scoring
 - **Fagerstrom score**: sum of f1–f4 option values (0–6). Levels: 0–2 Niska, 3–4 Umerena, 5–6 Visoka
 - **Smoking profile**: derived from p1 answer → Stresni pušač / Socijalni pušač / Pušač iz navike / Mešoviti profil
-- **Financial**: hardcoded 15 cigs/day, 450 RSD/pack, 20 cigs/pack (not yet personalised from q1)
-- **Readiness score**: sum of r1+r2 values (0–6)
+- **Driver breakdown**: `calculateDriverBreakdown(answers)` — stress/habit/social/nicotine signals, all sum to 100%
+- **Readiness score**: `calculateReadinessScore(answers)` — 0–100 from r1, r2, p2, p4
+- **Financial**: from Q1 answer map (a=3, b=8, c=15, d=25 cigs/day) × onboarding pack price
 
-## Email API (`/api/subscribe`)
-Currently logs to console only. TODOs in the file:
-- Wire up Resend (or other provider) for transactional email
-- Wire up Supabase/Airtable for waitlist storage
-- `RESEND_API_KEY` env var expected when Resend is added
+## Supabase (`quiz_submissions` table)
+Columns: `id`, `email` (unique), `name`, `smoking_profile`, `fagerstrom_score`, `fagerstrom_level`, `annual_cost_rsd`, `five_year_cost_rsd`, `cigarettes_per_day`, `readiness_score`, `committed`, `answers` (jsonb), `gender`, `created_at`
 
-## Known gaps / TODOs
-- **[DONE] Feedback screens** — implemented as FeedbackScreen, ember gradient bg, triggers at Q3 and Q7
-- **[DONE] Loading screen** — sequential bars, rotating facts, commitment modal, `committed` stored in state
-- **[DONE] Financial calc** — now uses Q1 answer map (a=3, b=8, c=15, d=25) + onboarding pack price
-- **[DONE] Onboarding** — gender + pack price collected before quiz starts
-- **[DONE] Gender variants** — all gendered copy uses `isMale = gender !== 'žensko'` conditional
-- **[DONE] Iskra app teaser** — in PromoScreen (animated mockup iframe) and ResultsScreen card
-- **[DONE] Waitlist card** — ember-gradient card at bottom of ResultsScreen
-- **[DONE] FAQ** — FaqSection accordion in ResultsScreen
-- **[DONE] Share** — M/F gendered share text, uses `navigator.share` with clipboard fallback
-- **[DONE] Social links** — TikTok and Instagram links in ResultsScreen
-- **[DONE] Supabase** — `quiz_submissions` table, upsert on email conflict, uses `SUPABASE_SERVICE_ROLE_KEY`
-- **[DONE] Resend** — confirmation email sent on submit; `committed` field included in DB row
-- **[DONE] Copy rewrite** — human tone, M/F Serbian grammar variants applied throughout
-- No analytics/tracking yet
-- Fagerstrom max is scored as /6 (simplified — actual clinical scale is 0–10)
-- Email confirmation uses male-only footer copy ("Dobio si", "završio") — needs gender-aware version once gender is passed to API
+Upsert on `email` conflict. Uses `SUPABASE_SERVICE_ROLE_KEY` (not anon key) to bypass RLS. RLS enabled with insert + update policies (`with check (true)`).
+
+## PostHog analytics
+**Client-side events** (fired in `page.tsx`):
+
+| Event | When | Key properties |
+|-------|------|----------------|
+| `quiz_intro_cta_clicked` | Intro CTA tapped | — |
+| `quiz_started` | Onboarding submit | `gender`, `pack_price` |
+| `quiz_question_answered` | Each answer | `question_id`, `question_index`, `category`, `answer_value` (numeric) |
+| `quiz_feedback_1_seen` | After Q3 | `cigs_per_day` |
+| `quiz_feedback_2_seen` | After Q7 | `fagerstrom_score`, `fagerstrom_level` |
+| `quiz_loading_started` | After Q15 | — |
+| `quiz_commitment_yes` | Modal "Da" | — |
+| `quiz_commitment_no` | Modal "Još nisam" | — |
+| `quiz_partial_revealed` | Partial stage mount | `smoking_profile`, `fagerstrom_level`, `readiness_score` |
+| `quiz_email_gate_seen` | Email stage mount | — |
+| `quiz_email_submitted` | Submit clicked | profile, fagerstrom, readiness, committed, gender |
+| `quiz_promo_seen` | Promo stage mount | — |
+| `quiz_results_seen` | Results stage mount | profile, fagerstrom, annual_cost, readiness, committed |
+| `quiz_results_shared` | Share button | `method`, `smoking_profile` |
+
+**Server-side** (fired in `/api/subscribe`):
+- `posthog.identify(distinctId, { email, name, gender })`
+- `posthog.capture('waitlist_signup_completed', { ...full results })`
+- `distinct_id` passed in POST body from client for accurate session merge
+
+Anonymous profile enriched on `quiz_started`: `posthog.identify(posthog.get_distinct_id(), { gender, pack_price })`.
+
+PostHog SDK initialized via `/ingest` proxy (configured in `next.config.ts` rewrites) to avoid ad-blocker interference.
+
+## Preloading
+`layout.tsx` preloads all critical assets on page load:
+- `/iskra-logo.png`, `/iskra-flame-ember.png`, `/iskra-man.png`, `/iskra-woman.png`, `/canyon-bg.png` — as `image`
+- `/iskra-animated-mockup.html` — as `document`
+
+## Gender system
+`isMale = gender !== 'žensko'` — null/`'drugo'` default to male forms. Applied throughout all copy. Gender passed to API and stored in Supabase. QuestionScreen has display overrides for f4/p1/p2/p3/p4/r1 questions.
 
 ## Conventions
 - All inline styles use CSS variables (`var(--ember)`, etc.) — do not introduce raw hex values
 - Component structure: each quiz stage is a separate function component in `page.tsx`
 - No external UI library — everything is hand-rolled with the design system
 - Animations trigger on mount via CSS classes, not JS
+- Nav wordmark is always **ISKRA** (all caps)
+- No emoji in UI — use SVG icon primitives (`Ico*` components at top of `page.tsx`)
+- Supabase and Resend clients must be initialized **inside** the handler function, not at module level (causes build errors when env vars missing at build time)

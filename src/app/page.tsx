@@ -141,12 +141,12 @@ function IntroScreen({ onStart }: { onStart: () => void }) {
     { Icon: IcoWrench,   bg: '#FEF0E8', stroke: '#E8621A', text: 'Personalizovana strategija prestanka' },
   ];
 
-  const listItems = [
-    'koliko si zapravo zavisan od nikotina',
-    'šta te najčešće vraća cigareti',
-    'koliko te pušenje košta godišnje',
-    'koji pristup ima najviše smisla za tvoj slučaj',
-  ];
+  const [count, setCount] = useState(parseInt(SOCIAL_PROOF.completionCount.replace('.', ''), 10));
+  useEffect(() => {
+    const increment = Math.floor(Math.random() * 2) + 6; // 6 or 7
+    const timer = setTimeout(() => setCount(c => c + increment), Math.random() * 4000 + 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     // Layer 1 — warm white base
@@ -169,43 +169,33 @@ function IntroScreen({ onStart }: { onStart: () => void }) {
         position: 'relative', maxWidth: 480, margin: '0 auto',
         padding: '0 20px', flex: 1, display: 'flex', flexDirection: 'column',
       }}>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingTop: 24, paddingBottom: 8, textAlign: 'center' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingTop: 16, paddingBottom: 8, textAlign: 'center' }}>
 
-          <div className="animate-scale-in" style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            background: 'var(--card)', borderRadius: 14, padding: '8px 16px',
-            border: '1px solid var(--border)', marginBottom: 20,
-            boxShadow: 'var(--shadow-card)', alignSelf: 'center',
-          }}>
-            <img src="/iskra-flame-ember.png" alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
-            <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: '-0.02em', color: 'var(--text)' }}>iskra</span>
+          <div className="animate-scale-in" style={{ alignSelf: 'center', marginBottom: 14 }}>
+            <div style={{
+              width: 52, height: 52, borderRadius: 14,
+              background: 'var(--card)', border: '1px solid var(--border)',
+              boxShadow: 'var(--shadow-card)', overflow: 'hidden',
+            }}>
+              <img src="/iskra-logo.png" alt="Iskra" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            </div>
           </div>
 
           <div className="animate-slide-up delay-100">
             <h1 style={{
-              fontSize: 22, fontWeight: 800, lineHeight: 1.25,
-              letterSpacing: '-0.025em', marginBottom: 10,
+              fontSize: 21, fontWeight: 800, lineHeight: 1.25,
+              letterSpacing: '-0.025em', marginBottom: 8,
             }}>
               Šta je razlog zbog kog i dalje pališ, čak i kad znaš da ne bi trebalo?
             </h1>
-            <p style={{ color: 'var(--text-sub)', fontSize: 14, lineHeight: 1.55, marginBottom: 10 }}>
-              Za 3 minuta saznaćeš:
+            <p style={{ color: 'var(--text-sub)', fontSize: 13, lineHeight: 1.6, marginBottom: 14 }}>
+              Za 3 minuta saznaćeš koliko si zapravo zavisan od nikotina, šta te vraća cigareti i koji pristup ima smisla za tvoj slučaj.
             </p>
-            <div style={{ textAlign: 'left', marginBottom: 20 }}>
-              {listItems.map(item => (
-                <div key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
-                  <span style={{ color: 'var(--ember)', flexShrink: 0, marginTop: 2 }}>
-                    <IcoCheck size={10} stroke="var(--ember)" sw={3} />
-                  </span>
-                  <span style={{ fontSize: 14, color: 'var(--text-sub)', lineHeight: 1.5 }}>{item}</span>
-                </div>
-              ))}
-            </div>
           </div>
 
           <div className="animate-slide-up delay-200" style={{
             display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
-            gap: 8, marginBottom: 16,
+            gap: 8, marginBottom: 12,
           }}>
             {[
               { num: '15',   label: 'pitanja' },
@@ -213,46 +203,62 @@ function IntroScreen({ onStart }: { onStart: () => void }) {
               { num: '100%', label: 'besplatno' },
             ].map(item => (
               <div key={item.label} style={{
-                background: 'var(--card)', borderRadius: 14, padding: '12px 8px',
+                background: 'var(--card)', borderRadius: 14, padding: '10px 8px',
                 border: '1px solid var(--border)', textAlign: 'center',
                 boxShadow: 'var(--shadow-card)',
               }}>
-                <div style={{ fontWeight: 800, fontSize: 17, color: 'var(--ember)', letterSpacing: '-0.02em' }}>{item.num}</div>
+                <div style={{ fontWeight: 800, fontSize: 16, color: 'var(--ember)', letterSpacing: '-0.02em' }}>{item.num}</div>
                 <div style={{ fontSize: 11, color: 'var(--text-sub)', fontWeight: 600, marginTop: 2 }}>{item.label}</div>
               </div>
             ))}
           </div>
 
-          <div className="animate-slide-up delay-200" style={{ marginBottom: 16, textAlign: 'center' }}>
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              fontSize: 13, color: 'var(--text-sub)', fontWeight: 600,
+          {/* Social proof — full-width option-card style pill */}
+          <div className="animate-slide-up delay-200" style={{ marginBottom: 12 }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              background: 'var(--card)', border: '1.5px solid var(--border)',
+              borderRadius: 'var(--r-card)', padding: '12px 16px',
+              boxShadow: 'var(--shadow-card)',
             }}>
-              <IcoCheck size={12} stroke="#2D8A4E" sw={2.5} />
-              {SOCIAL_PROOF.completionCount}+ ljudi je već uradilo procenu
-            </span>
+              <div style={{
+                width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                background: '#E1F1E1', border: '1.5px solid #B8DDB8',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <IcoCheck size={14} stroke="#2D8A4E" sw={2.5} />
+              </div>
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--text)', letterSpacing: '-0.01em' }}>
+                  {count.toLocaleString('sr-RS')}+ procena
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--text-sub)', fontWeight: 500 }}>
+                  Provereno od strane pušača iz Srbije
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="animate-slide-up delay-300" style={{
-            background: 'var(--card)', borderRadius: 18, padding: '16px 18px',
-            border: '1px solid var(--border)', marginBottom: 20, textAlign: 'left',
+            background: 'var(--card)', borderRadius: 18, padding: '12px 16px',
+            border: '1px solid var(--border)', marginBottom: 14, textAlign: 'left',
             boxShadow: 'var(--shadow-card)',
           }}>
-            <p className="isk-eyebrow" style={{ marginBottom: 12 }}>Šta dobijaš</p>
+            <p className="isk-eyebrow" style={{ marginBottom: 10 }}>Šta dobijaš</p>
             {benefits.map(({ Icon, bg, stroke, text }) => (
-              <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                <IconChip icon={<Icon size={13} stroke={stroke} />} bg={bg} size={28} radius={7} />
-                <span style={{ fontSize: 14, lineHeight: 1.35 }}>{text}</span>
+              <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                <IconChip icon={<Icon size={13} stroke={stroke} />} bg={bg} size={26} radius={7} />
+                <span style={{ fontSize: 13, lineHeight: 1.35 }}>{text}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="animate-slide-up delay-400" style={{ paddingBottom: 28 }}>
+        <div className="animate-slide-up delay-400" style={{ paddingBottom: 24 }}>
           <button className="btn-primary" onClick={() => { posthog.capture('quiz_intro_cta_clicked'); onStart(); }}>
             Počni →
           </button>
-          <p style={{ fontSize: 12, color: 'var(--text-sub)', marginTop: 10, textAlign: 'center' }}>
+          <p style={{ fontSize: 12, color: 'var(--text-sub)', marginTop: 8, textAlign: 'center' }}>
             Bez registracije. Bez osuđivanja. Samo jasan odgovor gde se trenutno nalaziš.
           </p>
         </div>
@@ -321,7 +327,7 @@ function OnboardingScreen({ onComplete }: {
             </svg>
             Nazad
           </button>
-          <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: '-0.01em', color: 'var(--text)' }}>iskra</span>
+          <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: '-0.01em', color: 'var(--text)' }}>ISKRA</span>
           <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-sub)', justifySelf: 'end' }}>{step} / 2</span>
         </div>
         <div className="progress-bar">
@@ -526,7 +532,7 @@ function QuestionScreen({
             </svg>
             Nazad
           </button>
-          <span style={{ fontWeight: 800, fontSize: 15, letterSpacing: '-0.01em', color: 'var(--text)' }}>iskra</span>
+          <span style={{ fontWeight: 800, fontSize: 15, letterSpacing: '-0.01em', color: 'var(--text)' }}>ISKRA</span>
           <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-sub)', justifySelf: 'end' }}>
             {questionIndex + 1} / {total}
           </span>
@@ -851,7 +857,7 @@ function LoadingScreen({ results, onComplete, gender }: {
             boxShadow: 'var(--shadow-card)',
           }}>
             <img src="/iskra-flame-ember.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} />
-            <span style={{ fontWeight: 800, fontSize: 17, letterSpacing: '-0.02em', color: 'var(--text)' }}>iskra</span>
+            <span style={{ fontWeight: 800, fontSize: 17, letterSpacing: '-0.02em', color: 'var(--text)' }}>ISKRA</span>
           </div>
           <h2 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.025em', marginBottom: 8, color: 'var(--text)' }}>
             Analiziramo tvoje odgovore...
@@ -1381,7 +1387,6 @@ function PromoScreen({ onContinue, gender }: { onContinue: () => void; gender: G
             position: 'relative', zIndex: 2,
             background: 'transparent',
           }}
-          loading="lazy"
           title="Iskra app preview"
           scrolling="no"
         />
@@ -1783,7 +1788,7 @@ function ResultsScreen({ results, email, name, gender }: { results: QuizResults;
             },
             {
               label: 'Instagram',
-              href: 'https://instagram.com/iskraclub',
+              href: 'https://instagram.com/iskraclub_',
               icon: (
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                   <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
@@ -2013,9 +2018,10 @@ export default function Home() {
   }, [stage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const resolvedGender: Gender = gender ?? 'muško';
+  const fixedHeightStage = ['onboarding', 'quiz', 'feedback', 'health', 'loading'].includes(stage);
 
   return (
-    <main style={{ background: 'var(--bg)' }}>
+    <main style={{ background: 'var(--bg)', ...(fixedHeightStage ? { height: '100dvh', overflow: 'hidden' } : {}) }}>
       <div style={{ height: 3, background: 'var(--ember-grad)', position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100 }} />
 
       {stage === 'intro' && <IntroScreen onStart={() => setStage('onboarding')} />}
